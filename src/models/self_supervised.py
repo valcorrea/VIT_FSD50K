@@ -2,6 +2,8 @@ import torch
 from torch import nn
 import torch.nn.functional as F
 
+from src.models.modules.EMA import EMA
+
 '''
 Code from: https://github.com/HolgerBovbjerg/data2vec-KWS/tree/main
 '''
