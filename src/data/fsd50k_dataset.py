@@ -1,16 +1,12 @@
 import os
 import tqdm
 import glob
-import numpy as np
-import librosa
 import torch
 import json
-import random
 import pandas as pd
 from torch.utils.data import Dataset
 from typing import Tuple, Optional
 from src.data.audio_parser import AudioParser
-import soundfile as sf
 from src.data.utils import load_audio
 
 '''
@@ -22,8 +18,8 @@ class SpectrogramDataset(Dataset):
                  audio_config: dict, mode: Optional[str] = "multilabel",
                  augment: Optional[bool] = False,
                  labels_delimiter: Optional[str] = ",",
-                 mixer: Optional = None,
-                 transform: Optional = None) -> None:
+                 mixer = None,
+                 transform = None) -> None:
         super(SpectrogramDataset, self).__init__()
         assert os.path.isfile(labels_map)
         assert os.path.splitext(labels_map)[-1] == ".json"
