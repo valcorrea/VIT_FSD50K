@@ -1,4 +1,4 @@
-from src.models.self_supervised import SSTransformer
+from src.models.ssformer import SSTransformer
 import torch
 from torch import optim, nn
 import math
