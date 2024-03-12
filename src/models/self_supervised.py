@@ -46,21 +46,7 @@ class SSTransformer(nn.Module):
         self.regression_head = self._build_regression_head()  # Instantiate regression head to predict target
 
     def _build_regression_head(self):
-        if self.modality == 'text':
-            embed_dim = self.embed_dim
-            curr_dim = embed_dim
-            projections = []
-            for i in range(self.cfg.model.head_layers - 1):
-                next_dim = embed_dim * 2 if i == 0 else curr_dim
-                projections.append(nn.Linear(curr_dim, next_dim))
-                projections.append(nn.GELU())
-                curr_dim = next_dim
-
-            projections.append(nn.Linear(curr_dim, embed_dim))
-            return nn.Sequential(*projections)
-
-        if self.modality in ['audio', 'vision']:
-            return nn.Linear(self.embed_dim, self.embed_dim)
+        return nn.Linear(self.embed_dim, self.embed_dim)
 
     def ema_step(self):
         """
@@ -91,11 +77,17 @@ class SSTransformer(nn.Module):
 
         # The teacher input will usually be the same data as the student input.
         # Get the outputs of the model given the inputs
-        encoder_out, student_hidden_states = self.encoder(student_input, mask=mask, output_hidden_states=True)
-
-        # If there is no teacher input then there is no self supervised learning to be done. Just return encoder outputs
+        encoder_out, student_hidden_states = self.encoder(student_input, mask=mask, output_hidden_states=True)        
         if teacher_input is None:
             return encoder_out
+        
+        # Adapted to timm
+
+        # if teacher_input is None:
+        #     encoder_out = self.encoder(student_input)
+        #     return encoder_out
+        # else:
+        #     student_hidden_states = self.encoder.get_intermediate_layers(student_input)
         
         # If there is teacher input then we need to compare the latent space. Get the last hidden state from the transformer.
         x = student_hidden_states[-1]
@@ -103,15 +95,16 @@ class SSTransformer(nn.Module):
             self.ema.model.eval()
 
             # Also and without updating any gradients get the latent space of the EMA model.
+            # teacher_hidden_states = self.ema.model.get_intermediate_layers(teacher_input, self.average_top_k_layers)
             _, teacher_hidden_states = self.ema.model(teacher_input, mask=None, output_hidden_states=True)
 
             # Average out the last k hidden states of the EMA model? This is now our target. 
             y = teacher_hidden_states[-self.average_top_k_layers:]
-            if self.modality in ['vision', 'text']:  # Follow the same layer normalization procedure for text and vision
-                y = [F.layer_norm(tl.float(), tl.shape[-1:]) for tl in y]
-                y = sum(y) / len(y)
-                if self.normalize_targets:
-                    y = F.layer_norm(y.float(), y.shape[-1:])
+            
+            y = [F.layer_norm(tl.float(), tl.shape[-1:]) for tl in y]
+            y = sum(y) / len(y)
+            if self.normalize_targets:
+                y = F.layer_norm(y.float(), y.shape[-1:])
 
         x = x[mask]
         y = y[mask]
