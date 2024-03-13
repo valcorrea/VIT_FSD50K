@@ -3,7 +3,7 @@ import math
 import time
 
 import wandb
-import tqdm
+from tqdm import tqdm
 
 import torch
 from torch.utils.data import DataLoader
@@ -123,9 +123,11 @@ def train(net: nn.Module, mask_generator, optimizer: optim.Optimizer, criterion,
         running_loss = 0.0
         running_target_var = 0.
         running_prediction_var = 0.
-        for batch_index, data, in enumerate(train_loader):
-            batch_size = data.size(dim=0)
-            audio_length = data.size(dim=-1)
+        for spec, _ in tqdm(train_loader):
+            spec = spec.expand(1, -1, -1, -1) # Create an extra empty dimension
+            spec = spec.permute(1, 0, 2, 3) # Permute so we have Batch - Channel - Width - Height
+            batch_size = spec.size(dim=0)
+            audio_length = spec.size(dim=-1)
             if schedulers["warmup"] is not None and epoch < config["hparams"]["scheduler"]["n_warmup"]:
                 schedulers["warmup"].step()
 
@@ -138,7 +140,7 @@ def train(net: nn.Module, mask_generator, optimizer: optim.Optimizer, criterion,
             mask = mask_generator(shape=(batch_size, audio_length)).to(device)
             mask = torch.cat([torch.zeros(batch_size, 1, device=mask.device), mask], dim=1).bool()
 
-            loss, target_var, prediction_var = train_single_batch(net, data, mask, optimizer, criterion, device)
+            loss, target_var, prediction_var = train_single_batch(net, spec, mask, optimizer, criterion, device)
             net.ema_step()
             running_loss += loss
             running_target_var += target_var
