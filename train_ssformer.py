@@ -67,29 +67,29 @@ def main(args):
 
     config = parse_config(args.conf)
     
-    # if args.id:
-    #     config["exp"]["exp_name"] = config["exp"]["exp_name"] + args.id
+    if args.id:
+        config["exp"]["exp_name"] = config["exp"]["exp_name"] + args.id
     
-    # if config["exp"]["wandb"]:
-    #     import wandb
-    #     if config["exp"]["wandb_api_key"] is not None:
-    #         with open(config["exp"]["wandb_api_key"], "r") as f:
-    #             os.environ["WANDB_API_KEY"] = f.read()
+    if config["exp"]["wandb"]:
+        import wandb
+        if config["exp"]["wandb_api_key"] is not None:
+            with open(config["exp"]["wandb_api_key"], "r") as f:
+                os.environ["WANDB_API_KEY"] = f.read()
 
-    #     elif os.environ.get("WANDB_API_KEY", False):
-    #         print(f"Found API key from env variable.")
+        elif os.environ.get("WANDB_API_KEY", False):
+            print(f"Found API key from env variable.")
 
-    #     else:
-    #         wandb.login()
+        else:
+            wandb.login()
 
-    #     with wandb.init(project=config["exp"]["proj_name"], 
-    #                     name=config["exp"]["exp_name"],
-    #                     entity=config["exp"]["entity"], 
-    #                     config=config["hparams"]):
-    #         training_pipeline(config)
+        with wandb.init(project=config["exp"]["proj_name"], 
+                        name=config["exp"]["exp_name"],
+                        entity=config["exp"]["entity"], 
+                        config=config["hparams"]):
+            training_pipeline(config)
 
-    # else:
-    training_pipeline(config)
+    else:
+        training_pipeline(config)
 
 
 
