@@ -34,8 +34,8 @@ def training_pipeline(config):
                            weight_decay=config["hparams"]["optimizer"]["weight_decay"])
 
     # Make dataset
-    train_set = SpectrogramDataset(config['manifest_path'], config['labels_map'], config['audio_config'])
-    val_set = SpectrogramDataset(config['val_mainfest_path'], config['labels_map'], config['audio_config'])
+    train_set = SpectrogramDataset(config['tr_manifest_path'], config['labels_map'], config['audio_config'])
+    val_set = SpectrogramDataset(config['val_manifest_path'], config['labels_map'], config['audio_config'])
 
     # Make dataloaders
     train_loader = DataLoader(train_set, batch_size=config['hparams']['batch_size'])
@@ -93,7 +93,7 @@ if __name__ == '__main__':
     from argparse import ArgumentParser
 
     ap = ArgumentParser()
-    ap.add_argument('--conf', type=str, help='Path to configuration file')
+    ap.add_argument('--conf', type=str, required=True, help='Path to configuration file')
     ap.add_argument('--id', type=str, help='Unique experiment identifier')
     args = ap.parse_args()
 
