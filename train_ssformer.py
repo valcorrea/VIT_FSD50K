@@ -6,6 +6,7 @@ from torch.utils.data import DataLoader
 
 from src.utils.config_parser import parse_config
 from src.utils.ssformer_trainer import train
+from src.utils.masking import AudioMaskingGenerator
 from src.models.KWT import KWT
 from src.models.ssformer import SSTransformer
 
@@ -42,10 +43,13 @@ def training_pipeline(config):
     val_loader = DataLoader(val_set, batch_size=config['hparams']['batch_size'])
 
     # Make a mask generator???
-    mask_generator=5
+    mask_generator = AudioMaskingGenerator(mask_prob=config["hparams"]["SSformer"]["mask_prob"],
+                                           mask_length=config["hparams"]["SSformer"]["mask_length"],
+                                           attention_mask=None,
+                                           min_masks=config["hparams"]["SSformer"]["min_masks"])
 
     # Make a scheduler???
-    schedulers = {'schedulers': None,
+    schedulers = {'scheduler': None,
                   'warmup': None}
 
     # Train
