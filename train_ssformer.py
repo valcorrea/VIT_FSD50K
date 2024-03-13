@@ -5,6 +5,7 @@ from torch import nn, optim
 from torch.utils.data import DataLoader
 
 from src.utils.config_parser import parse_config
+from src.utils.ssformer_trainer import train
 from src.models.KWT import KWT
 from src.models.ssformer import SSTransformer
 
@@ -34,9 +35,28 @@ def training_pipeline(config):
 
     # Make dataset
     train_set = SpectrogramDataset(config['manifest_path'], config['labels_map'], config['audio_config'])
+    val_set = SpectrogramDataset(config['val_mainfest_path'], config['labels_map'], config['audio_config'])
 
-    # Make dataloader
+    # Make dataloaders
     train_loader = DataLoader(train_set, batch_size=config['hparams']['batch_size'])
+    val_loader = DataLoader(val_set, batch_size=config['hparams']['batch_size'])
+
+    # Make a mask generator???
+    mask_generator=5
+
+    # Make a scheduler???
+    schedulers = {'schedulers': None,
+                  'warmup': None}
+
+    # Train
+    train(net=ssformer,
+          mask_generator=mask_generator,
+          optimizer=optimizer,
+          criterion=criterion,
+          train_loader=train_loader,
+          validation_loader=val_loader,
+          schedulers=schedulers,
+          config=config)
     
 
 def main(args):
