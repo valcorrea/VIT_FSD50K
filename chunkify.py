@@ -35,7 +35,6 @@ files_ogg = glob.glob("{}/*.ogg".format(args.src_dir))
 
 files = files_ogg + files_webm
 
-print(len(files))
 tgt_dir = args.tgt_dir
 
 lf = len(files)
