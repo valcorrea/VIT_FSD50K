@@ -35,7 +35,7 @@ parser.add_argument(
 
 args = parser.parse_args()
 
-files_webm = glob.glob("{}/*.webm".format(args.src_dir))
+files_webm = glob.glob("{}/*.wav".format(args.src_dir))
 files_ogg = glob.glob("{}/*.ogg".format(args.src_dir))
 
 files = files_ogg + files_webm
