@@ -24,6 +24,7 @@ parser.add_argument(
     help="path to destination directory where resampled files will be stored",
 )
 parser.add_argument("--sample_rate", type=int, default=24000, help="target sample rate")
+parser.add_argument("--os", type=str, default='linux', choices=['windows', 'linux'], help="Operating system the code is ran on.")
 
 args = parser.parse_args()
 
@@ -41,13 +42,22 @@ SAMPLE_RATE = args.sample_rate
 
 def process_idx(idx):
     f = files[idx]
-    fname = f.split("/")[-1]
+    if args.os == 'windows':
+        fname = f.split("\\")[-1]
+    else:
+        fname = f.split("/")[-1]
+
     tgt_path = os.path.join(
         tgt_dir, fname.replace(".webm", ".wav") if ".webm" in fname else fname
     )
-    command = "ffmpeg -loglevel 0 -nostats -i '{}' -ac 1 -ar {} '{}'".format(
-        f, SAMPLE_RATE, tgt_path
-    )
+    if args.os == 'windows':
+        command = "ffmpeg -loglevel 0 -nostats -i {} -ac 1 -ar {} {}".format(
+            f, SAMPLE_RATE, tgt_path
+        )
+    else:
+        command = "ffmpeg -loglevel 0 -nostats -i '{}' -ac 1 -ar {} '{}'".format(
+            f, SAMPLE_RATE, tgt_path
+        )
     sp.call(command, shell=True)
     if idx % 500 == 0:
         print("Done: {:05d}/{}".format(idx, lf))
