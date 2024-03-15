@@ -27,6 +27,9 @@ parser.add_argument(
 parser.add_argument(
     "--tgt_dir", "-t", type=str, help="target directory where chunks with be stored"
 )
+parser.add_argument(
+    "--os", type=str, default='linux', choices=['windows', 'linux'], help="Operating system the code is ran on."
+                    )
 
 args = parser.parse_args()
 
@@ -52,7 +55,11 @@ def replicate_if_needed(x, min_clip_duration):
 
 def process_idx(idx):
     f = files[idx]
-    fname = f.split("/")[-1].split(".")[0]
+    if args.os == 'windows':
+        fname = f.split("\\")[-1].split(".")[0]
+    else:
+        fname = f.split("/")[-1].split(".")[0]
+
     x, sr = sf.read(f)
     min_clip_duration = int(sr * 1)
     parts = []
