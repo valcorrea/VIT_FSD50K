@@ -71,8 +71,10 @@ def evaluate(net: SSTransformer, mask_generator, criterion, dataloader: DataLoad
     running_target_var = 0.0
     running_prediction_var = 0.0
 
-    for data in tqdm(dataloader):
-        data = data.to(device)
+    for spec in tqdm(dataloader):
+        spec = spec.expand(1, -1, -1, -1) # Create an extra empty dimension
+        spec = spec.permute(1, 0, 2, 3)
+        data = spec.to(device)
         batch_size = data.size(dim=0)
         audio_length = data.size(dim=-1)
         mask = mask_generator(shape=(batch_size, audio_length)).to(device)
@@ -106,6 +108,8 @@ def train(net: nn.Module, mask_generator, optimizer: optim.Optimizer, criterion,
     :param schedulers: learning rate scheduler
     :param config: model and training config
     """
+    if not os.path.isdir(config['exp']['save_dir']):
+        os.mkdir(config['exp']['save_dir'])
 
     step = 0
     best_avg_loss = 0.0
