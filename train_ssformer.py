@@ -35,6 +35,8 @@ def training_pipeline(config):
                            weight_decay=config["hparams"]["optimizer"]["weight_decay"])
 
     # Make dataset
+    train_set = SpectrogramDataset(config['nl_manifest_path'],audio_config=config['audio_config'])
+    val_set = SpectrogramDataset(config['nl_manifest_path'], audio_config=config['audio_config'])
     train_set = SpectrogramDataset(config['nl_manifest_path'], labels_map=None, audio_config=config['audio_config'])
     val_set = SpectrogramDataset(config['nl_manifest_path'], labels_map=None, audio_config=config['audio_config'])
 
