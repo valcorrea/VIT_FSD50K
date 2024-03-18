@@ -123,7 +123,7 @@ def train(net: nn.Module, mask_generator, optimizer: optim.Optimizer, criterion,
         running_loss = 0.0
         running_target_var = 0.
         running_prediction_var = 0.
-        for spec, _ in tqdm(train_loader):
+        for spec in tqdm(train_loader):
             spec = spec.expand(1, -1, -1, -1) # Create an extra empty dimension
             spec = spec.permute(1, 0, 2, 3) # Permute so we have Batch - Channel - Width - Height
             batch_size = spec.size(dim=0)
