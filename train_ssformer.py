@@ -10,7 +10,7 @@ from src.utils.masking import AudioMaskingGenerator
 from src.models.KWT import KWT
 from src.models.ssformer import SSTransformer
 
-from src.data.fsd50k_dataset import SpectrogramDataset
+from src.data.dataset import SpectrogramDataset
 
 
 def training_pipeline(config):
@@ -35,8 +35,8 @@ def training_pipeline(config):
                            weight_decay=config["hparams"]["optimizer"]["weight_decay"])
 
     # Make dataset
-    train_set = SpectrogramDataset(config['tr_manifest_path'], config['labels_map'], config['audio_config'])
-    val_set = SpectrogramDataset(config['val_manifest_path'], config['labels_map'], config['audio_config'])
+    train_set = SpectrogramDataset(config['tr_manifest_path'],audio_config=config['audio_config'])
+    val_set = SpectrogramDataset(config['val_manifest_path'], audio_config=config['audio_config'])
 
     # Make dataloaders
     train_loader = DataLoader(train_set, batch_size=config['hparams']['batch_size'])
@@ -66,6 +66,7 @@ def training_pipeline(config):
 def main(args):
 
     config = parse_config(args.conf)
+    config['nl_manifest_path'] = args.nl_manifest_path
     
     if args.id:
         config["exp"]["exp_name"] = config["exp"]["exp_name"] + args.id
@@ -99,6 +100,7 @@ if __name__ == '__main__':
     ap = ArgumentParser()
     ap.add_argument('--conf', type=str, required=True, help='Path to configuration file')
     ap.add_argument('--id', type=str, help='Unique experiment identifier')
+    ap.add_argument('--nl_manifest_path', type=str, help='Path to the unlabeled data manifest.')
     args = ap.parse_args()
 
     main(args)
