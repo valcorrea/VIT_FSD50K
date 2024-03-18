@@ -8,6 +8,8 @@ Preprocessing Step 2:
     as specified in FSD50k paper [https://arxiv.org/abs/2010.00475], pg 16, B. Baseline Systems
 
     optionally: can be used to precompute spectrograms instead
+
+    Run with: python chunkify.py --src_dir <path_to_validation_resampled> --tgt_dir <path_to_validation_resampled_chunks> --os <operating_system>
 """
 
 import argparse
@@ -80,7 +82,7 @@ def process_idx(idx):
         sf.write(pth, parts[jx], sr, "PCM_16")
 
     if idx % 500 == 0:
-        print("Done: {:07d}/{:07d}".format(idx, lf))
+        print("Done: {:03d}/{:03d}".format(idx, lf))
 
 
 if __name__ == "__main__":

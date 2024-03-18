@@ -37,7 +37,7 @@ args = parser.parse_args()
 files_webm = glob.glob(os.path.join(args.src_path, "*.webm"))
 files_ogg = glob.glob(os.path.join(args.src_path, "*.ogg"))
 files = files_ogg + files_webm
-print(len(files))
+#print(len(files))
 tgt_dir = args.dst_path
 if not os.path.exists(tgt_dir):
     os.makedirs(tgt_dir)
@@ -64,7 +64,7 @@ def process_idx(idx):
         )
     sp.call(command, shell=True)
     if idx % 500 == 0:
-        print("Done: {:05d}/{}".format(idx, lf))
+        print("Done: {:04d}/{}".format(idx, lf))
 
 
 if __name__ == "__main__":
