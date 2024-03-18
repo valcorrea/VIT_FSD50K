@@ -62,6 +62,8 @@ def training_pipeline(config):
           schedulers=schedulers,
           config=config)
     
+    wandb.finish()
+    
 
 def main(args):
 
