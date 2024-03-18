@@ -49,6 +49,8 @@ class SpectrogramDataset(Dataset):
                 self.labels_map = json.load(fd)
             self.labels = df["labels"].values
             assert len(self.files) == len(self.labels)
+        else:
+            self.labels = None
 
         self.len = len(self.files)
         self.sr = audio_config.get("sample_rate", "22050")
@@ -128,23 +130,31 @@ class SpectrogramDataset(Dataset):
         self, index: int
     ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         f = self.files[index]
-        lbls = self.labels[index]
-        label_tensor = self.__parse_labels__(lbls)
         preprocessed_audio = self.__get_audio__(f)
         real, comp = self.__get_feature__(preprocessed_audio)
         if self.transform is not None:
             real = self.transform(real)
-        return real, comp, label_tensor
+        if self.labels:
+            lbls = self.labels[index]
+            label_tensor = self.__parse_labels__(lbls)
+            return real, comp, label_tensor
+        else:
+            return real, comp
 
     def __getitem__(self, index: int) -> Tuple[torch.Tensor, torch.Tensor]:
-        real, comp, label_tensor = self.__get_item_helper__(index)
-        if self.mixer is not None:
-            real, final_label = self.mixer(self, real, label_tensor)
-            if self.mode != "multiclass":
+        # TODO: Fix mixer for self supervised
+        if self.labels:
+            real, comp, label_tensor = self.__get_item_helper__(index)
+            if self.mixer is not None:
+                real, final_label = self.mixer(self, real, label_tensor)
+                if self.mode != "multiclass":
 
-                return real, final_label
+                    return real, final_label
 
-        return real, label_tensor
+            return real, label_tensor
+        else:
+            real, comp = self.__get_item_helper__(index)
+            return real
 
     def __parse_labels__(self, lbls: str) -> torch.Tensor:
         if self.mode == "multilabel":
@@ -164,6 +174,7 @@ class SpectrogramDataset(Dataset):
 
 if __name__ == '__main__':
     from src.utils.config_parser import parse_config
+    from torch.utils.data import DataLoader
     config = parse_config('configs/ssformer.cfg')
     manifest_path = r"C:\Users\vismi\Documents\datasets\covid19-cough\manidests\no_labeled_chunk.csv"
 
@@ -171,3 +182,6 @@ if __name__ == '__main__':
                                  labels_map= None,
                                 audio_config = config['audio_config'],
                                 mode = "multiclass")
+    
+    dataloader = DataLoader(dataset, batch_size=1)
+    print(next(iter(dataloader)))
