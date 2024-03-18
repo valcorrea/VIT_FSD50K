@@ -36,18 +36,20 @@ class SpectrogramDataset(Dataset):
         transform=None,
     ) -> None:
         super(SpectrogramDataset, self).__init__()
-        assert os.path.isfile(labels_map)
-        assert os.path.splitext(labels_map)[-1] == ".json"
-        assert audio_config is not None
-        with open(labels_map, "r") as fd:
-            self.labels_map = json.load(fd)
 
-        self.len = None
-        self.labels_delim = labels_delimiter
+        assert audio_config is not None
         df = pd.read_csv(manifest_path)
-        self.files = df["files"].values
-        self.labels = df["labels"].values
-        assert len(self.files) == len(self.labels)
+        self.files = df["files"].values 
+        # Set labels_map to None for self supervised.
+        if labels_map:
+            assert os.path.isfile(labels_map)
+            assert os.path.splitext(labels_map)[-1] == ".json"
+            self.labels_delim = labels_delimiter
+            with open(labels_map, "r") as fd:
+                self.labels_map = json.load(fd)
+            self.labels = df["labels"].values
+            assert len(self.files) == len(self.labels)
+
         self.len = len(self.files)
         self.sr = audio_config.get("sample_rate", "22050")
         self.n_fft = audio_config.get("n_fft", 511)
@@ -159,3 +161,13 @@ class SpectrogramDataset(Dataset):
 
     def get_bg_len(self):
         return len(self.bg_files)
+
+if __name__ == '__main__':
+    from src.utils.config_parser import parse_config
+    config = parse_config('configs/ssformer.cfg')
+    manifest_path = r"C:\Users\vismi\Documents\datasets\covid19-cough\manidests\no_labeled_chunk.csv"
+
+    dataset = SpectrogramDataset(manifest_path = manifest_path,
+                                 labels_map= None,
+                                audio_config = config['audio_config'],
+                                mode = "multiclass")
