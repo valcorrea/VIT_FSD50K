@@ -60,7 +60,7 @@ def log(log_dict: dict, step: int, config: dict) -> None:
         step (int): Current step.
         config (dict): Config dict.
     """
-
+    """"
     # send logs to wandb tracking server
     if config["exp"]["wandb"]:
         wandb.log(log_dict, step=step)
@@ -77,7 +77,7 @@ def log(log_dict: dict, step: int, config: dict) -> None:
     # show logs in stdout
     if config["exp"]["log_to_stdout"]:
         print(log_message)
-
+"""
 
 def get_model(model_config: dict) -> nn.Module:
     """Creates model from config dict.

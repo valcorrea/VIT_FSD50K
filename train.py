@@ -10,10 +10,14 @@ from utils.dataset import get_loader
 from utils.spectrogram_dataset import SpectrogramDataset
 from utils.config_parser import parse_config
 from KWT import KWT
+from torch.nn.parallel import DataParallel #probably too much overhead, is too slow with even 2 GPUs
 
+""""
+Run script with configuration file as argument
 
-### Run script with configuration file as argument
-#command: python train.py --conf <path-to-config-file.cfg>
+command: srun --time=4:00:00 --gres=gpu:1 singularity exec --nv <your_singularity_container_here> python train.py --conf KWT_configs/KWT_config.cfg
+
+"""
 
 def training_pipeline(config):
     """
@@ -26,8 +30,11 @@ def training_pipeline(config):
  # Set device
     device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 
+
+    
     # Initialize KWT
     model = KWT(**config['hparams']['KWT'])
+    model = DataParallel(model) # Wrapping model in DataParallel class
     model.to(device); # Sending device to GPU
 
     # Make dataset
@@ -40,6 +47,9 @@ def training_pipeline(config):
     val_loader = DataLoader(val_set, batch_size=config['hparams']['batch_size'])
     test_loader = DataLoader(test_set, batch_size=config['hparams']['batch_size'])
 
+    #classes = ('COVID-19', 'healthy', 'symptomatic')
+    classes = {"COVID-19": 0, "healthy": 1, "symptomatic": 2}
+    
     # Cross Entropy loss
     criterion = nn.CrossEntropyLoss() # multi class 
     #criterion = nn.BCEWithLogitsLoss() #multi label classification (FDS50K)

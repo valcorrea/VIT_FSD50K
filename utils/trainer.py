@@ -30,9 +30,10 @@ def train_single_batch(net: nn.Module, data: torch.Tensor, targets: torch.Tensor
     outputs = net(data)
     #print(outputs)
     #print(outputs.shape)
-    #print(targets)
+    #print(targets.dtype)
+    #print(outputs.dtype)
     #exit()
-    loss = criterion(outputs, targets)
+    loss = criterion(outputs, targets.long())
     loss.backward()
     optimizer.step()
 
@@ -104,13 +105,13 @@ def train(net: nn.Module, optimizer: optim.Optimizer, criterion: Callable, train
             spectrogram = spectrogram.expand(1, -1, -1, -1) # Create an extra empty dimension
             spectrogram = spectrogram.permute(1, 0, 2, 3) # Permute so we have Batch - Channel - Width - Height
             targets = targets[:,0]# all batches, first label
-            #targets = targets.permute(1, 0, 2, 3) #switching first two indexes
       
             if schedulers["warmup"] is not None and epoch < config["hparams"]["scheduler"]["n_warmup"]:
                 schedulers["warmup"].step()
 
             elif schedulers["scheduler"] is not None:
                 schedulers["scheduler"].step()
+    
 
             ####################
             # optimization step
@@ -130,7 +131,7 @@ def train(net: nn.Module, optimizer: optim.Optimizer, criterion: Callable, train
         # epoch complete
         #######################
 
-        log_dict = {"epoch": epoch, "time_per_epoch": time.time() - t0, "train_acc": correct/(len(train_loader.dataset)), "avg_loss_per_ep": running_loss/len(trainloader)}
+        log_dict = {"epoch": epoch, "time_per_epoch": time.time() - t0, "train_acc": correct/(len(train_loader.dataset)), "avg_loss_per_ep": running_loss/len(train_loader)}
         log(log_dict, step, config)
 
         if not epoch % config["exp"]["val_freq"]:
