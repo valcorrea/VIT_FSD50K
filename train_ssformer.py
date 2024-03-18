@@ -5,6 +5,8 @@ from torch import nn, optim
 from torch.utils.data import DataLoader
 
 import wandb
+import lightning as L
+from src.models.ssformer_lightning import LightningTransformer
 
 from src.utils.config_parser import parse_config
 from src.utils.ssformer_trainer import train
@@ -13,6 +15,7 @@ from src.models.KWT import KWT
 from src.models.ssformer import SSTransformer
 
 from src.data.dataset import SpectrogramDataset
+
 
 
 def training_pipeline(config):
@@ -25,16 +28,16 @@ def training_pipeline(config):
     vit.to(device);
 
     # Initialize SSformer
-    ssformer = SSTransformer(encoder=vit, **config['hparams']['SSformer'])
+    ssformer = LightningTransformer(encoder=vit, config=config)
     ssformer.to(device)
 
     # Set criterion and optimizer
-    criterion = nn.MSELoss(reduction="none")
-    parameters = ssformer.parameters()
-    optimizer = optim.Adam(parameters, lr=config["hparams"]["optimizer"]["lr"],
-                           betas=config["hparams"]["optimizer"]["betas"],
-                           eps=config["hparams"]["optimizer"]["eps"],
-                           weight_decay=config["hparams"]["optimizer"]["weight_decay"])
+    # criterion = nn.MSELoss(reduction="none")
+    # parameters = ssformer.parameters()
+    # optimizer = optim.Adam(parameters, lr=config["hparams"]["optimizer"]["lr"],
+    #                        betas=config["hparams"]["optimizer"]["betas"],
+    #                        eps=config["hparams"]["optimizer"]["eps"],
+    #                        weight_decay=config["hparams"]["optimizer"]["weight_decay"])
 
     # Make dataset
     train_set = SpectrogramDataset(config['nl_manifest_path'], labels_map=None, mode=None, audio_config=config['audio_config'])
@@ -54,15 +57,17 @@ def training_pipeline(config):
     schedulers = {'scheduler': None,
                   'warmup': None}
 
+    trainer = L.Trainer()
+    trainer.fit(ssformer, train_loader, val_loader)
     # Train
-    train(net=ssformer,
-          mask_generator=mask_generator,
-          optimizer=optimizer,
-          criterion=criterion,
-          train_loader=train_loader,
-          validation_loader=val_loader,
-          schedulers=schedulers,
-          config=config)
+    # train(net=ssformer,
+    #       mask_generator=mask_generator,
+    #       optimizer=optimizer,
+    #       criterion=criterion,
+    #       train_loader=train_loader,
+    #       validation_loader=val_loader,
+    #       schedulers=schedulers,
+    #       config=config)
     
     wandb.finish()
     
