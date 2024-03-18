@@ -1,6 +1,11 @@
+# Taken from (https://github.com/SarthakYadav)
+# MIT Licence
+# Copyright (c) 2021 Sarthak Yadav
+
+
 import numpy as np
-import torch
 import soundfile as sf
+import torch
 
 
 def _collate_fn(batch):
@@ -13,7 +18,9 @@ def _collate_fn(batch):
     minibatch_size = len(batch)
     max_seqlength = longest_sample.size(1)
     inputs = torch.zeros(minibatch_size, 1, freq_size, max_seqlength)
-    inputs_complex = torch.zeros((minibatch_size, 1, freq_size, max_seqlength), dtype=torch.complex64)
+    inputs_complex = torch.zeros(
+        (minibatch_size, 1, freq_size, max_seqlength), dtype=torch.complex64
+    )
     targets = []
     for x in range(minibatch_size):
         sample = batch[x]
@@ -36,7 +43,9 @@ def _collate_fn_multiclass(batch):
     minibatch_size = len(batch)
     max_seqlength = longest_sample.size(1)
     inputs = torch.zeros(minibatch_size, 1, freq_size, max_seqlength)
-    inputs_complex = torch.zeros((minibatch_size, 1, freq_size, max_seqlength), dtype=torch.complex64)
+    inputs_complex = torch.zeros(
+        (minibatch_size, 1, freq_size, max_seqlength), dtype=torch.complex64
+    )
     targets = torch.LongTensor(minibatch_size)
     for x in range(minibatch_size):
         sample = batch[x]
@@ -48,13 +57,14 @@ def _collate_fn_multiclass(batch):
     return inputs, inputs_complex, targets
 
 
-def load_audio(f, sr, min_duration: float = 5.):
+def load_audio(f, sr, min_duration: float = 5.0):
     if min_duration is not None:
         min_samples = int(sr * min_duration)
     else:
         min_samples = None
     x, clip_sr = sf.read(f)
-    x = x.astype('float32')
+    print("clip_sr", clip_sr)
+    x = x.astype("float32")
     assert clip_sr == sr
 
     # min filtering and padding if needed
