@@ -28,16 +28,18 @@ parser.add_argument(
     "--tgt_dir", "-t", type=str, help="target directory where chunks with be stored"
 )
 parser.add_argument(
-    "--os", type=str, default='linux', choices=['windows', 'linux'], help="Operating system the code is ran on."
-                    )
+    "--opsys",
+    type=str,
+    default="linux",
+    choices=["windows", "linux"],
+    help="Operating system the code is ran on.",
+)
 
 args = parser.parse_args()
 
-files_webm = glob.glob("{}/*.webm".format(args.src_dir))
-files_ogg = glob.glob("{}/*.ogg".format(args.src_dir))
+files = glob.glob("{}/*.wav".format(args.src_dir))
 
-files = files_ogg + files_webm
-
+# print(len(files))
 tgt_dir = args.tgt_dir
 
 lf = len(files)
@@ -55,7 +57,7 @@ def replicate_if_needed(x, min_clip_duration):
 
 def process_idx(idx):
     f = files[idx]
-    if args.os == 'windows':
+    if args.opsys == "windows":
         fname = f.split("\\")[-1].split(".")[0]
     else:
         fname = f.split("/")[-1].split(".")[0]
