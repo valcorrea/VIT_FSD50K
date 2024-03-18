@@ -10,7 +10,8 @@ from utils.dataset import get_loader
 from utils.spectrogram_dataset import SpectrogramDataset
 from utils.config_parser import parse_config
 from KWT import KWT
-from torch.nn.parallel import DataParallel #probably too much overhead, is too slow with even 2 GPUs
+#from torch.nn.parallel import DataParallel #probably too much overhead, is too slow with even 2 GPUs
+import matplotlib.pyplot as plt
 
 """"
 Run script with configuration file as argument
@@ -34,13 +35,20 @@ def training_pipeline(config):
     
     # Initialize KWT
     model = KWT(**config['hparams']['KWT'])
-    model = DataParallel(model) # Wrapping model in DataParallel class
+    #model = DataParallel(model) # Wrapping model in DataParallel class
     model.to(device); # Sending device to GPU
 
     # Make dataset
     train_set = SpectrogramDataset(config['tr_manifest_path'], config['labels_map'], config['audio_config'])
     val_set = SpectrogramDataset(config['val_manifest_path'], config['labels_map'], config['audio_config'])
     test_set = SpectrogramDataset(config['eval_manifest_path'],config['labels_map'],config['audio_config'])
+
+    #train_set.files = train_set.files[:1000]
+    #train_set.labels = train_set.labels[:1000]
+    #train_set.len = len(train_set.files)
+    #val_set.files = val_set.files[:1000]
+    #val_set.labels = val_set.labels[:1000]
+    #val_set.len = len(val_set.files)
 
     # Make dataloaders
     train_loader = DataLoader(train_set, batch_size=config['hparams']['batch_size'])
@@ -103,6 +111,7 @@ def training_pipeline(config):
     log(log_dict, final_step, config)
 """
 
+
 def main(args):
     """
     Calls training pipeline and sets up wandb logging if used
@@ -144,3 +153,5 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     main(args)
+
+    

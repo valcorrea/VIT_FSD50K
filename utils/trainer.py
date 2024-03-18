@@ -57,14 +57,19 @@ def evaluate(net: nn.Module, criterion: Callable, dataloader: DataLoader, device
     """
 
     net.eval()
+
     correct = 0
     running_loss = 0.0
 
-    for data, targets in tqdm(dataloader):
-        data, targets = data.to(device), targets.to(device)
-        out = net(data)
+    for spectrogram, targets in tqdm(dataloader):
+        spectrogram = spectrogram.expand(1, -1, -1, -1) # Create an extra empty dimension
+        spectrogram = spectrogram.permute(1, 0, 2, 3) # Permute so we have Batch - Channel - Width - Height
+        targets = targets[:,0]
+
+        spectrogram, targets = spectrogram.to(device), targets.to(device)
+        out = net(spectrogram)
         correct += out.argmax(1).eq(targets).sum().item()
-        loss = criterion(out, targets)
+        loss = criterion(out, targets.long())
         running_loss += loss.item()
 
     net.train()

@@ -107,6 +107,9 @@ def save_model(epoch: int, val_acc: float, save_path: str, net: nn.Module, optim
         log_file (str, optional): Log file. Defaults to None.
     """
 
+      # Create parent directory if it doesn't exist
+    os.makedirs(os.path.dirname(save_path), exist_ok=True)
+    
     ckpt_dict = {
         "epoch": epoch,
         "val_acc": val_acc,
