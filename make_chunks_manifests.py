@@ -80,7 +80,7 @@ parser.add_argument(
     help="path to directory for storing manifest csv files used for training",
 )
 parser.add_argument(
-    "--os",
+    "--opsys",
     type=str,
     choices=["windows", "linux"],
     default="linux",
@@ -88,7 +88,7 @@ parser.add_argument(
 )
 
 
-def process_set(csv_path, chuck_path, meta_name, os):
+def process_set(csv_path, chuck_path, meta_name, opsys):
 
     setdf = pd.read_csv(csv_path)
     set_files = setdf["uuid"].values
@@ -109,7 +109,7 @@ def process_set(csv_path, chuck_path, meta_name, os):
     set_keys = list(set_lbl_map.keys())
 
     for f in tqdm.tqdm(set_chunk_files):
-        if os == "windows":
+        if opsys == "windows":
             ext = f.split("\\")[-1].split(".")[0].split("_")[0]
         else:
             ext = f.split("/")[-1].split(".")[0].split("_")[0]
@@ -137,14 +137,14 @@ def process_set(csv_path, chuck_path, meta_name, os):
         json.dump(lbl_map, fd)
 
 
-def process_set_nolabels(csv_path, chuck_path, meta_name, os):
+def process_set_nolabels(csv_path, chuck_path, meta_name):
 
     # setdf = pd.read_csv(csv_path)
     # set_files = setdf["uuid"].values
     set_chunks_dir = chuck_path
     chunk_files = []
-    set_chunk_files = glob.glob(os.path.join(set_chunks_dir, "*.wav"))
 
+    set_chunk_files = glob.glob(os.path.join(set_chunks_dir, "*.wav"))
     for f in tqdm.tqdm(set_chunk_files):
         chunk_files.append(f)
 
@@ -180,9 +180,9 @@ if __name__ == "__main__":
     process_test = False if args.train_csv is None else True
 
     if process_train and process_val and process_test:
-        process_set_nolabels(
-            args.nl_csv, args.nl_chunks_dir, "no_labeled_chunk.csv", args.os
+        process_set_nolabels(args.nl_csv, args.nl_chunks_dir, "no_labeled_chunk.csv")
+        process_set(
+            args.train_csv, args.train_chunks_dir, "train_chunk.csv", args.opsys
         )
-        process_set(args.train_csv, args.train_chunks_dir, "train_chunk.csv", args.os)
-        process_set(args.val_csv, args.val_chunks_dir, "val_chunk.csv", args.os)
-        process_set(args.test_csv, args.test_chunks_dir, "test_chunk.csv", args.os)
+        process_set(args.val_csv, args.val_chunks_dir, "val_chunk.csv", args.opsys)
+        process_set(args.test_csv, args.test_chunks_dir, "test_chunk.csv", args.opsys)
