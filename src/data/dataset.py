@@ -34,6 +34,7 @@ class SpectrogramDataset(Dataset):
         labels_delimiter: Optional[str] = ",",
         mixer=None,
         transform=None,
+        extra_labels: Optional[str] = None,
     ) -> None:
         super(SpectrogramDataset, self).__init__()
 
@@ -56,6 +57,7 @@ class SpectrogramDataset(Dataset):
         self.sr = audio_config.get("sample_rate", "22050")
         self.n_fft = audio_config.get("n_fft", 511)
         win_len = audio_config.get("win_len", None)
+        self.extra_labels = []
         if not win_len:
             self.win_len = self.n_fft
         else:
@@ -101,6 +103,10 @@ class SpectrogramDataset(Dataset):
         self.prefetched_labels = None
         if self.mode == "multilabel":
             self.fetch_labels()
+
+        if extra_labels != None:
+            extra_lbl = pd.read_csv(extra_labels)
+            self.extra_labels[extra_labels["age"]]
 
     def fetch_labels(self):
         self.prefetched_labels = []
