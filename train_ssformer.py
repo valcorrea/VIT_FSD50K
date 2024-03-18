@@ -4,6 +4,8 @@ import torch
 from torch import nn, optim
 from torch.utils.data import DataLoader
 
+import wandb
+
 from src.utils.config_parser import parse_config
 from src.utils.ssformer_trainer import train
 from src.utils.masking import AudioMaskingGenerator
@@ -74,7 +76,7 @@ def main(args):
         config["exp"]["exp_name"] = config["exp"]["exp_name"] + args.id
     
     if config["exp"]["wandb"]:
-        import wandb
+        
         if config["exp"]["wandb_api_key"] is not None:
             with open(config["exp"]["wandb_api_key"], "r") as f:
                 os.environ["WANDB_API_KEY"] = f.read()
