@@ -163,3 +163,4 @@ wandb/
 dataset/
 tests/
 outputs/
+lightning_logs/
