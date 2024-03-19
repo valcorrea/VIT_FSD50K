@@ -27,6 +27,14 @@ def training_pipeline(config):
     train_set = SpectrogramDataset(config['tr_manifest_path'], labels_map=None, mode=None, audio_config=config['audio_config'])
     val_set = SpectrogramDataset(config['val_manifest_path'], labels_map=None, mode=None, audio_config=config['audio_config'])
 
+    if config['dev_mode']:
+        train_set.files = train_set.files[:50]
+        train_set.len = len(train_set.files)
+        val_set.files = val_set.files[:50]
+        val_set.len = len(val_set.files)
+        config['hparams']['batch_size'] = 25
+
+
     # Make dataloaders
     train_loader = DataLoader(train_set, batch_size=config['hparams']['batch_size'], num_workers=11)
     val_loader = DataLoader(val_set, batch_size=config['hparams']['batch_size'], num_workers=11)
@@ -42,6 +50,7 @@ def main(args):
     config = parse_config(args.conf)
     config['tr_manifest_path'] = args.tr_manifest_path
     config['val_manifest_path'] = args.val_manifest_path
+    config['dev_mode'] = args.dev_mode
     
     if args.id:
         config["exp"]["exp_name"] = config["exp"]["exp_name"] + args.id
@@ -76,6 +85,7 @@ if __name__ == '__main__':
     ap.add_argument('--id', type=str, help='Unique experiment identifier')
     ap.add_argument('--tr_manifest_path', type=str, help='Path to the unlabeled train data manifest.')
     ap.add_argument('--val_manifest_path', type=str, help='Path to the unlabeled val data manifest.')
+    ap.add_argument('--dev_mode', action='store_true', help='Flag to limit the dataset for testing purposes.')
     args = ap.parse_args()
 
     main(args)
