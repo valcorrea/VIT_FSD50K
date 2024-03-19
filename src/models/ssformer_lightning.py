@@ -53,13 +53,14 @@ class LightningTransformer(L.LightningModule):
         loss = self.criterion(predictions.float(), targets.float()).sum(dim=-1).sum().div(scale)
 
         self.model.ema_step()
-        return loss
-    
-    def on_validation_epoch_start(self):
-        self.running_loss = 0.0
-        self.running_target_var = 0.0
-        self.running_prediction_var = 0.0
 
+        with torch.no_grad():
+            target_var = self.compute_var(targets.float())
+            prediction_var = self.compute_var(predictions.float())
+
+        self.log_dict({"train_loss": loss, "lr": self.optimizer.param_groups[0]["lr"],
+                            "target_var": target_var, "prediction_var": prediction_var}, on_epoch=True, on_step=True)
+    
     def validation_step(self, batch, batch_idx):
         spec = batch
         spec = self.transform(spec)
@@ -72,20 +73,12 @@ class LightningTransformer(L.LightningModule):
         target_var = self.compute_var(targets.float())
         prediction_var = self.compute_var(predictions.float())
 
-        self.running_loss += loss.item()
-        self.running_target_var += target_var.item()
-        self.running_prediction_var += prediction_var.item()
-        
-    def on_validation_epoch_end(self):
-        avg_loss = self.running_loss / len(self.trainer.val_dataloaders.dataset)
-        avg_target_var = self.running_target_var / len(self.trainer.val_dataloaders)
-        avg_prediction_var = self.running_prediction_var / len(self.trainer.val_dataloaders)
-        self.log_dict({"val_loss": avg_loss,
-                "avg_val_target_var": avg_target_var, "avg_val_prediction_var": avg_prediction_var}, on_epoch=True)
+        self.log_dict({"val_loss": loss,
+                "val_target_var": target_var, "val_prediction_var": prediction_var}, on_epoch=True, on_step=True)        
 
     def configure_optimizers(self):
-        optimizer = optim.Adam(self.model.parameters(), lr=self.config["hparams"]["optimizer"]["lr"],
+        self.optimizer = optim.Adam(self.model.parameters(), lr=self.config["hparams"]["optimizer"]["lr"],
                            betas=self.config["hparams"]["optimizer"]["betas"],
                            eps=self.config["hparams"]["optimizer"]["eps"],
                            weight_decay=self.config["hparams"]["optimizer"]["weight_decay"])
-        return optimizer
+        return self.optimizer
