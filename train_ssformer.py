@@ -12,7 +12,7 @@ from src.utils.config_parser import parse_config
 from src.models.KWT import KWT
 from src.data.dataset import SpectrogramDataset
 
-def training_pipeline(config, logger):
+def training_pipeline(config, logger, ckpt_path):
 
     # Set device
     device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
@@ -22,7 +22,10 @@ def training_pipeline(config, logger):
     vit.to(device);
 
     # Initialize SSformer
-    ssformer = LightningTransformer(encoder=vit, config=config)
+    if ckpt_path:
+        ssformer = LightningTransformer.load_from_checkpoint(ckpt_path, encoder=vit, config=config)
+    else:
+        ssformer = LightningTransformer(encoder=vit, config=config)
     ssformer.to(device)
 
     # Make dataset
@@ -81,11 +84,11 @@ def main(args):
                                  config=config["hparams"],
                                  log_model=True,
                                  save_dir='outputs/')
-            training_pipeline(config, logger)
+            training_pipeline(config, logger, args.ckpt_path)
 
     else:
         logger = None
-        training_pipeline(config, logger)
+        training_pipeline(config, logger, args.ckpt_path)
 
 
 if __name__ == '__main__':
@@ -94,8 +97,9 @@ if __name__ == '__main__':
     ap = ArgumentParser()
     ap.add_argument('--conf', type=str, required=True, help='Path to configuration file')
     ap.add_argument('--id', type=str, help='Unique experiment identifier')
-    ap.add_argument('--tr_manifest_path', type=str, help='Path to the unlabeled train data manifest.')
-    ap.add_argument('--val_manifest_path', type=str, help='Path to the unlabeled val data manifest.')
+    ap.add_argument('--tr_manifest_path', required=True, type=str, help='Path to the unlabeled train data manifest.')
+    ap.add_argument('--val_manifest_path', required=True, type=str, help='Path to the unlabeled val data manifest.')
+    ap.add_argument('--ckpt_path', type=str, help='Path to model checkpoint.')
     ap.add_argument('--dev_mode', action='store_true', help='Flag to limit the dataset for testing purposes.')
     args = ap.parse_args()
 
