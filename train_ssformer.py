@@ -7,7 +7,7 @@ import lightning as L
 from lightning.pytorch.loggers import WandbLogger
 from lightning.pytorch.callbacks import ModelCheckpoint, EarlyStopping
 
-from src.models.ssformer_lightning import LightningTransformer
+from src.utils.ssformer_trainer import LightningTransformer
 from src.utils.config_parser import parse_config
 from src.models.KWT import KWT
 from src.data.dataset import SpectrogramDataset
