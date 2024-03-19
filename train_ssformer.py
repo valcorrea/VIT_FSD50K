@@ -43,7 +43,7 @@ def training_pipeline(config, logger):
 
     # Create Callbacks
     model_checkpoint = ModelCheckpoint(monitor="val_loss", mode="min")
-    early_stopping = EarlyStopping(monitor="val_loss", mode="min", patience=5)
+    early_stopping = EarlyStopping(monitor="val_loss", mode="min", patience=config['hparams']['early_stopping_patience'])
     callbacks = [model_checkpoint, early_stopping]
 
     trainer = L.Trainer(max_epochs=config['hparams']['n_epochs'], 
