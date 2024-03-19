@@ -56,6 +56,8 @@ def evaluate(net: nn.Module, criterion: Callable, dataloader: DataLoader, device
         float: Loss scalar.
     """
 
+    device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+    #log_file = os.path.join(config["exp"]["save_dir"], "training_log.txt")
     net.eval()
 
     correct = 0
