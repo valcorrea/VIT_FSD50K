@@ -4,13 +4,15 @@ import wandb
 import torch
 from torch.utils.data import DataLoader
 import lightning as L
+from lightning.pytorch.loggers import WandbLogger
+from lightning.pytorch.callbacks import ModelCheckpoint
 
 from src.models.ssformer_lightning import LightningTransformer
 from src.utils.config_parser import parse_config
 from src.models.KWT import KWT
 from src.data.dataset import SpectrogramDataset
 
-def training_pipeline(config):
+def training_pipeline(config, logger):
 
     # Set device
     device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
@@ -36,13 +38,17 @@ def training_pipeline(config):
 
 
     # Make dataloaders
-    train_loader = DataLoader(train_set, batch_size=config['hparams']['batch_size'], num_workers=11)
-    val_loader = DataLoader(val_set, batch_size=config['hparams']['batch_size'], num_workers=11)
+    train_loader = DataLoader(train_set, batch_size=config['hparams']['batch_size'])
+    val_loader = DataLoader(val_set, batch_size=config['hparams']['batch_size'])
 
-    trainer = L.Trainer()
+    # Create Callbacks
+    checkpoint_callback = ModelCheckpoint(monitor="val_loss", mode="min")
+
+    trainer = L.Trainer(max_epochs=config['hparams']['n_epochs'], 
+                        logger=logger,
+                        callbacks=[checkpoint_callback])
     trainer.fit(ssformer, train_loader, val_loader)
     
-    wandb.finish()
     
 
 def main(args):
@@ -66,15 +72,17 @@ def main(args):
 
         else:
             wandb.login()
-
-        with wandb.init(project=config["exp"]["proj_name"], 
-                        name=config["exp"]["exp_name"],
-                        entity=config["exp"]["entity"], 
-                        config=config["hparams"]):
-            training_pipeline(config)
+            logger = WandbLogger(project=config["exp"]["proj_name"],
+                                 name=config["exp"]["exp_name"],
+                                 entity=config["exp"]["entity"],
+                                 config=config["hparams"],
+                                 log_model=True,
+                                 save_dir='outputs/')
+            training_pipeline(config, logger)
 
     else:
-        training_pipeline(config)
+        logger = None
+        training_pipeline(config, logger)
 
 
 if __name__ == '__main__':
