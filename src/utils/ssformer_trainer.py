@@ -52,7 +52,7 @@ class LightningTransformer(L.LightningModule):
         scale = math.sqrt(predictions.size(dim=-1))
         loss = self.criterion(predictions.float(), targets.float()).sum(dim=-1).sum().div(scale)
 
-        self.model.ema_step()
+        # self.model.ema_step()
 
         with torch.no_grad():
             target_var = self.compute_var(targets.float())
@@ -60,6 +60,9 @@ class LightningTransformer(L.LightningModule):
 
         self.log_dict({"train_loss": loss, "lr": self.optimizer.param_groups[0]["lr"],
                             "target_var": target_var, "prediction_var": prediction_var}, on_epoch=True, on_step=True)
+    
+    def on_train_epoch_end(self):
+        self.model.ema_step()
     
     def validation_step(self, batch, batch_idx):
         spec = batch
