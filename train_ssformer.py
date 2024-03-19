@@ -5,7 +5,7 @@ import torch
 from torch.utils.data import DataLoader
 import lightning as L
 from lightning.pytorch.loggers import WandbLogger
-from lightning.pytorch.callbacks import ModelCheckpoint
+from lightning.pytorch.callbacks import ModelCheckpoint, EarlyStopping
 
 from src.models.ssformer_lightning import LightningTransformer
 from src.utils.config_parser import parse_config
@@ -42,11 +42,14 @@ def training_pipeline(config, logger):
     val_loader = DataLoader(val_set, batch_size=config['hparams']['batch_size'])
 
     # Create Callbacks
-    checkpoint_callback = ModelCheckpoint(monitor="val_loss", mode="min")
+    model_checkpoint = ModelCheckpoint(monitor="val_loss", mode="min")
+    early_stopping = EarlyStopping(monitor="val_loss", mode="min", patience=5)
+    callbacks = [model_checkpoint, early_stopping]
 
     trainer = L.Trainer(max_epochs=config['hparams']['n_epochs'], 
                         logger=logger,
-                        callbacks=[checkpoint_callback])
+                        callbacks=callbacks,
+                        log_every_n_steps=5)
     trainer.fit(ssformer, train_loader, val_loader)
     
     
