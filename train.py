@@ -161,12 +161,8 @@ def main(args):
         else:
             wandb.login()
 
-        with wandb.init(project=config["exp"]["proj_name"], name=config["exp"]["exp_name"], config=config["hparams"]):
+        with wandb.init(project=config["exp"]["proj_name"], name=config["exp"]["exp_name"], config=config["hparams"],entity=config["exp"]["entity"]):
             training_pipeline(config)
-
-        
-    
-
     else:
 
         training_pipeline(config)
