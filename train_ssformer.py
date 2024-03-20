@@ -60,7 +60,7 @@ def training_pipeline(config, logger, ckpt_path):
 
 def main(args):
 
-    config = parse_config(args.conf)
+    config = parse_config(args.config)
     if args.tr_manifest_path:
         config['tr_manifest_path'] = args.tr_manifest_path
     if args.val_manifest_path:
