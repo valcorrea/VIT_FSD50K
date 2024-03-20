@@ -41,18 +41,19 @@ def training_pipeline(config, logger, ckpt_path):
 
 
     # Make dataloaders
-    train_loader = DataLoader(train_set, batch_size=config['hparams']['batch_size'])
-    val_loader = DataLoader(val_set, batch_size=config['hparams']['batch_size'])
+    train_loader = DataLoader(train_set, batch_size=config['hparams']['batch_size'], num_workers=5)
+    val_loader = DataLoader(val_set, batch_size=config['hparams']['batch_size'], num_workers=5)
 
     # Create Callbacks
-    model_checkpoint = ModelCheckpoint(monitor="val_loss", mode="min")
-    early_stopping = EarlyStopping(monitor="val_loss", mode="min", patience=config['hparams']['early_stopping_patience'])
+    model_checkpoint = ModelCheckpoint(monitor="val_loss", mode="min", verbose=True)
+    early_stopping = EarlyStopping(monitor="val_loss", mode="min", patience=config['hparams']['early_stopping_patience'], verbose=True)
     callbacks = [model_checkpoint, early_stopping]
 
     trainer = L.Trainer(max_epochs=config['hparams']['n_epochs'], 
                         logger=logger,
                         callbacks=callbacks,
-                        log_every_n_steps=5)
+                        log_every_n_steps=5,
+                        strategy='ddp_find_unused_parameters_true')
     trainer.fit(ssformer, train_loader, val_loader)
     
     
