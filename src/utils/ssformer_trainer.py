@@ -59,7 +59,8 @@ class LightningTransformer(L.LightningModule):
             prediction_var = self.compute_var(predictions.float())
 
         self.log_dict({"train_loss": loss, "lr": self.optimizer.param_groups[0]["lr"],
-                            "target_var": target_var, "prediction_var": prediction_var}, on_epoch=True, on_step=True)
+                            "target_var": target_var, "prediction_var": prediction_var}, on_epoch=True, on_step=True, sync_dist=True)
+        return loss
     
     def on_train_epoch_end(self):
         self.model.ema_step()
@@ -77,7 +78,7 @@ class LightningTransformer(L.LightningModule):
         prediction_var = self.compute_var(predictions.float())
 
         self.log_dict({"val_loss": loss,
-                "val_target_var": target_var, "val_prediction_var": prediction_var}, on_epoch=True, on_step=True)        
+                "val_target_var": target_var, "val_prediction_var": prediction_var}, on_epoch=True, on_step=True, sync_dist=True)        
 
     def configure_optimizers(self):
         self.optimizer = optim.Adam(self.model.parameters(), lr=self.config["hparams"]["optimizer"]["lr"],
