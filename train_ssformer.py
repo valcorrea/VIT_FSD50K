@@ -61,8 +61,10 @@ def training_pipeline(config, logger, ckpt_path):
 def main(args):
 
     config = parse_config(args.conf)
-    config['tr_manifest_path'] = args.tr_manifest_path
-    config['val_manifest_path'] = args.val_manifest_path
+    if args.tr_manifest_path:
+        config['tr_manifest_path'] = args.tr_manifest_path
+    if args.val_manifest_path:
+        config['val_manifest_path'] = args.val_manifest_path
     config['dev_mode'] = args.dev_mode
     
     if args.id:
@@ -96,10 +98,10 @@ if __name__ == '__main__':
     from argparse import ArgumentParser
 
     ap = ArgumentParser()
-    ap.add_argument('--conf', type=str, required=True, help='Path to configuration file')
+    ap.add_argument('config', type=str, help='Path to configuration file')
     ap.add_argument('--id', type=str, help='Unique experiment identifier')
-    ap.add_argument('--tr_manifest_path', required=True, type=str, help='Path to the unlabeled train data manifest.')
-    ap.add_argument('--val_manifest_path', required=True, type=str, help='Path to the unlabeled val data manifest.')
+    ap.add_argument('--tr_manifest_path', type=str, help='Path to the unlabeled train data manifest.')
+    ap.add_argument('--val_manifest_path', type=str, help='Path to the unlabeled val data manifest.')
     ap.add_argument('--ckpt_path', type=str, help='Path to model checkpoint.')
     ap.add_argument('--dev_mode', action='store_true', help='Flag to limit the dataset for testing purposes.')
     args = ap.parse_args()
