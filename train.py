@@ -7,7 +7,8 @@ from torch import nn
 import wandb
 from utils.trainer import train, evaluate
 from utils.dataset import get_loader
-from utils.spectrogram_dataset import SpectrogramDataset
+from src.data.dataset import SpectrogramDataset
+#from utils.spectrogram_dataset import SpectrogramDataset
 from utils.config_parser import parse_config
 from KWT import KWT
 from utils.misc import seed_everything, count_params, get_model, calc_step, log
@@ -31,7 +32,12 @@ def training_pipeline(config):
     # Training initialzation
     #####################################
  # Set device
-    device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+    # Get cpu, gpu or mps device for training.
+    device = (
+        "cuda"
+        if torch.cuda.is_available()
+        else "mps" if torch.backends.mps.is_available() else "cpu"
+    )
 
        # Initialize wandb run
     wandb.init(project=config["exp"]["proj_name"], name=config["exp"]["exp_name"], config=config["hparams"])
