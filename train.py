@@ -29,10 +29,12 @@ def training_pipeline(config):
     # Training initialzation
     #####################################
  # Set device
-    device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+    device = (
+        "cuda"
+        if torch.cuda.is_available()
+        else "mps" if torch.backends.mps.is_available() else "cpu"
+    )
 
-
-    
     # Initialize KWT
     model = KWT(**config['hparams']['KWT'])
     #model = DataParallel(model) # Wrapping model in DataParallel class

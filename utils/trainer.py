@@ -92,7 +92,11 @@ def train(net: nn.Module, optimizer: optim.Optimizer, criterion: Callable, train
 
     step = 0
     best_acc = 0.0
-    device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+    device = (
+        "cuda"
+        if torch.cuda.is_available()
+        else "mps" if torch.backends.mps.is_available() else "cpu"
+    )
     log_file = os.path.join(config["exp"]["save_dir"], "training_log.txt")
     
     ############################
