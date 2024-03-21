@@ -9,7 +9,7 @@ from utils.trainer import train, evaluate
 from utils.dataset import get_loader
 from utils.spectrogram_dataset import SpectrogramDataset
 from utils.config_parser import parse_config
-from KWT import KWT
+from src.models.KWT import KWT
 #from torch.nn.parallel import DataParallel #probably too much overhead, is too slow with even 2 GPUs
 import matplotlib.pyplot as plt
 
