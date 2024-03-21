@@ -171,3 +171,4 @@ dataset/
 tests/
 outputs/
 lightning_logs/
+.vscode/
