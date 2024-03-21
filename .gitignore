@@ -167,5 +167,5 @@ cython_debug/
 wandb/
 dataset/
 tests/
-
-dataset/
+outputs/
+lightning_logs/

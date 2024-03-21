@@ -192,4 +192,4 @@ if __name__ == '__main__':
                                 mode = "multiclass")
     
     dataloader = DataLoader(dataset, batch_size=1)
-    print(next(iter(dataloader)))
+    print(next(iter(dataloader[0].shape)))

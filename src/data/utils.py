@@ -63,7 +63,6 @@ def load_audio(f, sr, min_duration: float = 5.0):
     else:
         min_samples = None
     x, clip_sr = sf.read(f)
-    print("clip_sr", clip_sr)
     x = x.astype("float32")
     assert clip_sr == sr
 

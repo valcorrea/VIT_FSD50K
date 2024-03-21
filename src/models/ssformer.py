@@ -42,8 +42,15 @@ class SSTransformer(nn.Module):
         self.normalize_targets = normalize_targets
         self.__dict__.update(kwargs)
 
-        self.ema = EMA(self.encoder, device="cuda" if torch.cuda.is_available() else "cpu")  # Teacher
-        self.regression_head = self._build_regression_head()  # Instantiate regression head to predict target
+        device = (
+            "cuda"
+            if torch.cuda.is_available()
+            else "mps" if torch.backends.mps.is_available() else "cpu"
+        )
+        self.ema = EMA(self.encoder, device=device)  # Teacher
+        self.regression_head = (
+            self._build_regression_head()
+        )  # Instantiate regression head to predict target
 
     def _build_regression_head(self):
         return nn.Linear(self.embed_dim, self.embed_dim)

@@ -10,7 +10,7 @@ from utils.dataset import get_loader
 from src.data.dataset import SpectrogramDataset
 #from utils.spectrogram_dataset import SpectrogramDataset
 from utils.config_parser import parse_config
-from KWT import KWT
+from src.models.KWT import KWT
 from utils.misc import seed_everything, count_params, get_model, calc_step, log
 #from torch.nn.parallel import DataParallel #probably too much overhead, is too slow with even 2 GPUs
 import matplotlib.pyplot as plt
@@ -32,15 +32,11 @@ def training_pipeline(config):
     # Training initialzation
     #####################################
  # Set device
-    # Get cpu, gpu or mps device for training.
     device = (
         "cuda"
         if torch.cuda.is_available()
         else "mps" if torch.backends.mps.is_available() else "cpu"
     )
-
-       # Initialize wandb run
-    wandb.init(project=config["exp"]["proj_name"], name=config["exp"]["exp_name"], config=config["hparams"])
 
     # Initialize KWT
     model = KWT(**config['hparams']['KWT'])
