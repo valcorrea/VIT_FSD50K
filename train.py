@@ -31,7 +31,12 @@ def training_pipeline(config):
     # Training initialzation
     #####################################
  # Set device
-    device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+    # Get cpu, gpu or mps device for training.
+    device = (
+        "cuda"
+        if torch.cuda.is_available()
+        else "mps" if torch.backends.mps.is_available() else "cpu"
+    )
 
        # Initialize wandb run
     wandb.init(project=config["exp"]["proj_name"], name=config["exp"]["exp_name"], config=config["hparams"])

@@ -140,7 +140,7 @@ class SpectrogramDataset(Dataset):
         real, comp = self.__get_feature__(preprocessed_audio)
         if self.transform is not None:
             real = self.transform(real)
-        if self.labels:
+        if len(self.labels) > 0:
             lbls = self.labels[index]
             label_tensor = self.__parse_labels__(lbls)
             return real, comp, label_tensor
@@ -149,7 +149,7 @@ class SpectrogramDataset(Dataset):
 
     def __getitem__(self, index: int) -> Tuple[torch.Tensor, torch.Tensor]:
         # TODO: Fix mixer for self supervised
-        if self.labels:
+        if len(self.labels) > 0:
             real, comp, label_tensor = self.__get_item_helper__(index)
             if self.mixer is not None:
                 real, final_label = self.mixer(self, real, label_tensor)
