@@ -44,6 +44,9 @@ class SpectrogramDataset(Dataset):
         df = pd.read_csv(manifest_path)
         self.files = df["files"].values 
         # Set labels_map to None for self supervised.
+
+        #self.labels is populated with the labels extracted from the CSV file. 
+        #If labels_map is provided, it reads the labels from the CSV file and maps them according to the labels_map
         if labels_map:
             assert os.path.isfile(labels_map)
             assert os.path.splitext(labels_map)[-1] == ".json"
@@ -110,6 +113,9 @@ class SpectrogramDataset(Dataset):
             extra_lbl = pd.read_csv(extra_labels)
             self.extra_labels[extra_labels["age"]]
 
+        if labels_map:
+            self.weighted_sampler = self.calc_weights()
+
     def fetch_labels(self):
         self.prefetched_labels = []
         for lbl in tqdm.tqdm(self.labels):
@@ -142,7 +148,8 @@ class SpectrogramDataset(Dataset):
         real, comp = self.__get_feature__(preprocessed_audio)
         if self.transform is not None:
             real = self.transform(real)
-        if len(self.labels) > 0:
+        #if len(self.labels) > 0:
+        if self.labels is not None:
             lbls = self.labels[index]
             label_tensor = self.__parse_labels__(lbls)
             return real, comp, label_tensor
@@ -151,7 +158,8 @@ class SpectrogramDataset(Dataset):
 
     def __getitem__(self, index: int) -> Tuple[torch.Tensor, torch.Tensor]:
         # TODO: Fix mixer for self supervised
-        if len(self.labels) > 0:
+        #if len(self.labels) > 0:
+        if self.labels is not None:    
             real, comp, label_tensor = self.__get_item_helper__(index)
             if self.mixer is not None:
                 real, final_label = self.mixer(self, real, label_tensor)
@@ -179,7 +187,42 @@ class SpectrogramDataset(Dataset):
 
     def get_bg_len(self):
         return len(self.bg_files)
+    
+    # Weight calculation
+    #def calc_weights(self):
 
+        
+    #    from torch.utils.data import WeightedRandomSampler
+    #    counts = self.annotations['label'].value_counts() #replace self.annotations with equivalent
+    #    weights = []
+    #    for row in self.annotations.iterrows():
+    #        weights.append(1./counts[row[1]['label']])
+
+    #    weights = torch.FloatTensor(weights)
+    #    sampler = WeightedRandomSampler(weights, len(weights))
+    #    return sampler
+    
+
+    def calc_weights(self):
+        from torch.utils.data import WeightedRandomSampler
+        # Initialize an empty array for weights
+        weights = []
+        
+        # Calculate label counts
+        label_counts = {}
+        for labels in self.labels:
+            for label in labels.split(self.labels_delim):
+                label_counts[label] = label_counts.get(label, 0) + 1
+                
+        for labels in self.labels:
+            weight = sum(1.0 / label_counts[label] for label in labels.split(self.labels_delim))
+            weights.append(weight)
+        
+        weights = torch.FloatTensor(weights)
+        sampler = WeightedRandomSampler(weights, len(weights))
+        return sampler
+            
+    
 if __name__ == '__main__':
     from src.utils.config_parser import parse_config
     from torch.utils.data import DataLoader
