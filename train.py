@@ -1,6 +1,7 @@
 """Script for training KWT model"""
 from argparse import ArgumentParser
 from torch import nn, optim
+from torch.optim.lr_scheduler import LRScheduler
 from torch.utils.data import DataLoader
 import torch
 from torch import nn
