@@ -70,7 +70,7 @@ def evaluate(net: nn.Module, criterion: Callable, dataloader: DataLoader, device
     for spectrogram, targets in tqdm(dataloader):
         spectrogram = spectrogram.expand(1, -1, -1, -1) # Create an extra empty dimension
         spectrogram = spectrogram.permute(1, 0, 2, 3) # Permute so we have Batch - Channel - Width - Height
-        targets = targets[:,0]
+        #targets = targets[:,0]
 
         spectrogram, targets = spectrogram.to(device), targets.to(device)
         out = net(spectrogram)
@@ -119,7 +119,7 @@ def train(net: nn.Module, optimizer: optim.Optimizer, criterion: Callable, train
         for spectrogram, targets in tqdm(train_loader):
             spectrogram = spectrogram.expand(1, -1, -1, -1) # Create an extra empty dimension
             spectrogram = spectrogram.permute(1, 0, 2, 3) # Permute so we have Batch - Channel - Width - Height
-            targets = targets[:,0]# all batches, first label
+            #targets = targets[:,0]# all batches, first label
       
             if schedulers["warmup"] is not None and epoch < config["hparams"]["scheduler"]["n_warmup"]:
                 schedulers["warmup"].step()
