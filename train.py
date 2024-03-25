@@ -4,6 +4,7 @@ from torch import nn, optim
 from torch.utils.data import DataLoader
 import torch
 from torch import nn
+from transformers import get_cosine_schedule_with_warmup
 import wandb
 from utils.trainer import train, evaluate
 from utils.dataset import get_loader
@@ -54,13 +55,17 @@ def training_pipeline(config):
     val_set = SpectrogramDataset(config['val_manifest_path'], config['labels_map'], config['audio_config'])
     test_set = SpectrogramDataset(config['eval_manifest_path'],config['labels_map'],config['audio_config'])
 
-    #train_set.files = train_set.files[:1000]
-    #train_set.labels = train_set.labels[:1000]
-    #train_set.len = len(train_set.files)
-    #val_set.files = val_set.files[:1000]
-    #val_set.labels = val_set.labels[:1000]
-    #val_set.len = len(val_set.files)
-
+    if config['dev_mode']:
+        train_set.files = train_set.files[:100]
+        train_set.labels = train_set.labels[:100]
+        train_set.len = len(train_set.files)
+        val_set.files = val_set.files[:50]
+        val_set.labels = val_set.labels[:50]
+        val_set.len = len(val_set.files)
+        test_set.files = test_set.files[:50]
+        test_set.labels = test_set.labels[:50]
+        test_set.len = len(test_set.files)
+        config['hparams']['batch_size'] = 25
 
       # Make dataloaders
     train_loader = DataLoader(train_set, batch_size=config['hparams']['batch_size'], 
@@ -86,8 +91,9 @@ def training_pipeline(config):
     #optimizer = get_optimizer(model, config["hparams"]["optimizer"])
     
     # # Make a scheduler
-    schedulers = {'scheduler': None,
-                  'warmup': None}
+    cosineWarmup = get_cosine_schedule_with_warmup(optimizer, config["hparams"]["scheduler"]["n_warmup"], config["hparams"]["n_epochs"])
+    schedulers = {'scheduler': cosineWarmup,
+                  'warmup': cosineWarmup}
     
 
     #####################################
@@ -154,6 +160,7 @@ def main(args):
     # below code is for logging everything in wandb
     if args.id:
         config["exp"]["exp_name"] = config["exp"]["exp_name"] + args.id
+    config['dev_mode'] = args.dev_mode
 
     if config["exp"]["wandb"]:
         if config["exp"]["wandb_api_key"] is not None:
@@ -177,6 +184,7 @@ if __name__ == "__main__":
     parser.add_argument("--conf", type=str, required=True, help="Path to config.yaml file.")
     parser.add_argument("--ckpt", type=str, required=False, help="Path to checkpoint file.", default=None)
     parser.add_argument("--id", type=str, required=False, help="Obtional experiment identifier.", default=None)
+    parser.add_argument('--dev_mode', action='store_true', help='Flag to limit the dataset for testing purposes.')
     args = parser.parse_args()
 
     

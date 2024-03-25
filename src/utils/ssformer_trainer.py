@@ -5,6 +5,7 @@ from torch import nn, optim
 from src.models.ssformer import SSTransformer
 import math
 from src.utils.masking import AudioMaskingGenerator
+from transformers import get_cosine_schedule_with_warmup
 
 class LightningTransformer(L.LightningModule):
     def __init__(self,
@@ -29,11 +30,6 @@ class LightningTransformer(L.LightningModule):
         mask = torch.cat([torch.zeros(batch_size, 1, device=mask.device), mask], dim=1).bool()
         return mask
     
-    def transform(self, spec):
-        spec = spec.expand(1, -1, -1, -1)
-        spec = spec.permute(1, 0, 2, 3)
-        return spec
-    
     def compute_var(self, y: torch.Tensor):
         """
         Function for computing standard deviation of target
@@ -45,7 +41,6 @@ class LightningTransformer(L.LightningModule):
     
     def training_step(self, batch, batch_idx):
         spec = batch
-        spec = self.transform(spec)
         mask = self.create_mask(spec)
         predictions, targets = self(spec, spec, mask)
 
@@ -67,7 +62,6 @@ class LightningTransformer(L.LightningModule):
     
     def validation_step(self, batch, batch_idx):
         spec = batch
-        spec = self.transform(spec)
         mask = self.create_mask(spec)
         predictions, targets = self(spec, spec, mask)
         
@@ -85,4 +79,5 @@ class LightningTransformer(L.LightningModule):
                            betas=self.config["hparams"]["optimizer"]["betas"],
                            eps=self.config["hparams"]["optimizer"]["eps"],
                            weight_decay=self.config["hparams"]["optimizer"]["weight_decay"])
-        return self.optimizer
+        scheduler = get_cosine_schedule_with_warmup(self.optimizer, self.config["hparams"]["scheduler"]["n_warmup"], self.config["hparams"]["n_epochs"])
+        return [self.optimizer], [{"scheduler": scheduler, "interval": "epoch"}]
