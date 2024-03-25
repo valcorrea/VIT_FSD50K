@@ -33,11 +33,11 @@ def train_single_batch(net: nn.Module, data: torch.Tensor, targets: torch.Tensor
     #print(targets.dtype)
     #print(outputs.dtype)
     #exit()
-    loss = criterion(outputs, targets.long())
+    loss = criterion(outputs, targets)
     loss.backward()
     optimizer.step()
 
-    correct = outputs.argmax(1).eq(targets).sum()
+    correct = outputs.argmax(1).eq(targets.argmax(1)).sum()
     return loss.item(), correct.item()
 
 
@@ -70,8 +70,8 @@ def evaluate(net: nn.Module, criterion: Callable, dataloader: DataLoader, device
     for spectrogram, targets in tqdm(dataloader):
         spectrogram, targets = spectrogram.to(device), targets.to(device)
         out = net(spectrogram)
-        correct += out.argmax(1).eq(targets).sum().item()
-        loss = criterion(out, targets.long())
+        correct += out.argmax(1).eq(targets.argmax(1)).sum().item()
+        loss = criterion(out, targets)
         running_loss += loss.item()
 
     net.train()
