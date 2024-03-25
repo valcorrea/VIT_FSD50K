@@ -61,7 +61,6 @@ class LightningTransformer(L.LightningModule):
     
     def validation_step(self, batch, batch_idx):
         spec = batch
-        spec = self.transform(spec)
         mask = self.create_mask(spec)
         predictions, targets = self(spec, spec, mask)
         
