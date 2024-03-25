@@ -120,13 +120,6 @@ def train(net: nn.Module, optimizer: optim.Optimizer, criterion: Callable, train
             spectrogram = spectrogram.expand(1, -1, -1, -1) # Create an extra empty dimension
             spectrogram = spectrogram.permute(1, 0, 2, 3) # Permute so we have Batch - Channel - Width - Height
             targets = targets[:,0]# all batches, first label
-      
-            if schedulers["warmup"] is not None and epoch < config["hparams"]["scheduler"]["n_warmup"]:
-                schedulers["warmup"].step()
-
-            elif schedulers["scheduler"] is not None:
-                schedulers["scheduler"].step()
-    
 
             ####################
             # optimization step
@@ -148,6 +141,12 @@ def train(net: nn.Module, optimizer: optim.Optimizer, criterion: Callable, train
 
         log_dict = {"epoch": epoch, "time_per_epoch": time.time() - t0, "train_acc": correct/(len(train_loader.dataset)), "avg_loss_per_ep": running_loss/len(train_loader)}
         log(log_dict, step, config)
+
+        if schedulers["warmup"] is not None and epoch < config["hparams"]["scheduler"]["n_warmup"]:
+            schedulers["warmup"].step()
+
+        elif schedulers["scheduler"] is not None:
+            schedulers["scheduler"].step()
 
         if not epoch % config["exp"]["val_freq"]:
             val_acc, avg_val_loss = evaluate(net, criterion, val_loader, device)

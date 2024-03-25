@@ -4,6 +4,7 @@ from torch import nn, optim
 from torch.utils.data import DataLoader
 import torch
 from torch import nn
+from transformers import get_cosine_schedule_with_warmup
 import wandb
 from utils.trainer import train, evaluate
 from utils.dataset import get_loader
@@ -83,8 +84,9 @@ def training_pipeline(config):
     #optimizer = get_optimizer(model, config["hparams"]["optimizer"])
     
     # # Make a scheduler
-    schedulers = {'scheduler': None,
-                  'warmup': None}
+    cosineWarmup = get_cosine_schedule_with_warmup(optimizer, config["hparams"]["scheduler"]["n_warmup"], config["hparams"]["n_epochs"])
+    schedulers = {'scheduler': cosineWarmup,
+                  'warmup': cosineWarmup}
     
 
     #####################################
