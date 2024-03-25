@@ -5,6 +5,7 @@ from torch import nn, optim
 from src.models.ssformer import SSTransformer
 import math
 from src.utils.masking import AudioMaskingGenerator
+from transformers import get_cosine_schedule_with_warmup
 
 class LightningTransformer(L.LightningModule):
     def __init__(self,
@@ -78,4 +79,5 @@ class LightningTransformer(L.LightningModule):
                            betas=self.config["hparams"]["optimizer"]["betas"],
                            eps=self.config["hparams"]["optimizer"]["eps"],
                            weight_decay=self.config["hparams"]["optimizer"]["weight_decay"])
-        return self.optimizer
+        scheduler = get_cosine_schedule_with_warmup(self.optimizer, self.config["hparams"]["scheduler"]["n_warmup"], self.config["hparams"]["n_epochs"])
+        return [self.optimizer], [{"scheduler": scheduler, "interval": "epoch"}]
