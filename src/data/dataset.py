@@ -8,9 +8,6 @@ Spectrogram Dataset modified it to be able to work with Covid-19 Cough Audio Cla
 
 """
 
-
-
-
 import glob
 import json
 import os
@@ -19,7 +16,9 @@ from typing import Optional, Tuple
 import pandas as pd
 import torch
 import tqdm
+import random
 from torch.utils.data import Dataset
+from torchaudio.transforms import TimeMasking, FrequencyMasking
 
 from src.data.audio_parser import AudioParser
 from src.data.utils import load_audio
@@ -34,9 +33,8 @@ class SpectrogramDataset(Dataset):
         mode: Optional[str] = "multilabel",
         augment: Optional[bool] = False,
         labels_delimiter: Optional[str] = ",",
-        mixer=None,
-        transform=None,
         extra_labels: Optional[str] = None,
+        mask_param: Optional[int] = 15
     ) -> None:
         super(SpectrogramDataset, self).__init__()
 
@@ -72,6 +70,12 @@ class SpectrogramDataset(Dataset):
 
         self.normalize = audio_config.get("normalize", True)
         self.augment = augment
+        if self.augment:
+            self.mask_param = mask_param
+            random.seed(42)
+            torch.manual_seed(42)
+            self.time_mask = TimeMasking(time_mask_param=self.mask_param, iid_masks=True)
+            self.freq_mask = FrequencyMasking(freq_mask_param=self.mask_param, iid_masks=True)
         self.min_duration = audio_config.get("min_duration", None)
         self.background_noise_path = audio_config.get("bg_files", None)
         if self.background_noise_path is not None:
@@ -90,9 +94,6 @@ class SpectrogramDataset(Dataset):
             hop_length=self.hop_len,
             feature=feature,
         )
-        self.mixer = mixer
-        self.transform = transform
-
         if self.bg_files is not None:
             print("prepping bg_features")
             self.bg_features = []
@@ -109,6 +110,17 @@ class SpectrogramDataset(Dataset):
         if extra_labels != None:
             extra_lbl = pd.read_csv(extra_labels)
             self.extra_labels[extra_labels["age"]]
+
+    def masking(self, spec):
+        for mask in range(2):
+            spec = self.time_mask(spec)
+            spec = self.freq_mask(spec)
+        return spec
+    
+    def transform(self, spec):
+        spec = torch.from_numpy(spec)
+        spec = spec.expand(1, -1, -1)
+        return spec
 
     def fetch_labels(self):
         self.prefetched_labels = []
@@ -130,8 +142,6 @@ class SpectrogramDataset(Dataset):
         if self.bg_files is None:
             return None
         real = self.bg_features[index]
-        if self.transform is not None:
-            real = self.transform(real)
         return real
 
     def __get_item_helper__(
@@ -140,8 +150,6 @@ class SpectrogramDataset(Dataset):
         f = self.files[index]
         preprocessed_audio = self.__get_audio__(f)
         real, comp = self.__get_feature__(preprocessed_audio)
-        if self.transform is not None:
-            real = self.transform(real)
         if self.labels is not None:
             lbls = self.labels[index]
             label_tensor = self.__parse_labels__(lbls)
@@ -150,14 +158,12 @@ class SpectrogramDataset(Dataset):
             return real, comp
 
     def __getitem__(self, index: int) -> Tuple[torch.Tensor, torch.Tensor]:
-        # TODO: Fix mixer for self supervised
         if self.labels is not None:
             real, comp, label_tensor = self.__get_item_helper__(index)
-            if self.mixer is not None:
-                real, final_label = self.mixer(self, real, label_tensor)
-                if self.mode != "multiclass":
-
-                    return real, final_label
+            real = self.transform(real)
+            # Apply data augmentations
+            if self.augment:
+                real = self.masking(real)
 
             return real, label_tensor
         else:
