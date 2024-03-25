@@ -54,17 +54,23 @@ def training_pipeline(config):
     val_set = SpectrogramDataset(config['val_manifest_path'], config['labels_map'], config['audio_config'])
     test_set = SpectrogramDataset(config['eval_manifest_path'],config['labels_map'],config['audio_config'])
 
-    train_set.files = train_set.files[:1000]
-    train_set.labels = train_set.labels[:1000]
-    train_set.len = len(train_set.files)
-    val_set.files = val_set.files[:1000]
-    val_set.labels = val_set.labels[:1000]
-    val_set.len = len(val_set.files)
+    #train_set.files = train_set.files[:1000]
+    #train_set.labels = train_set.labels[:1000]
+    #train_set.len = len(train_set.files)
+    #val_set.files = val_set.files[:1000]
+    #val_set.labels = val_set.labels[:1000]
+    #val_set.len = len(val_set.files)
 
-    # Make dataloaders
-    train_loader = DataLoader(train_set, batch_size=config['hparams']['batch_size'])
-    val_loader = DataLoader(val_set, batch_size=config['hparams']['batch_size'])
-    test_loader = DataLoader(test_set, batch_size=config['hparams']['batch_size'])
+
+      # Make dataloaders
+    train_loader = DataLoader(train_set, batch_size=config['hparams']['batch_size'], 
+    sampler= train_set.weighted_sampler)
+    val_loader = DataLoader(val_set, batch_size=config['hparams']['batch_size'],
+    sampler= val_set.weighted_sampler)
+    test_loader = DataLoader(test_set, batch_size=config['hparams']['batch_size'],
+    sampler = test_set.weighted_sampler)
+
+    
 
     #classes = ('COVID-19', 'healthy', 'symptomatic')
     classes = {"COVID-19": 0, "healthy": 1, "symptomatic": 2}
@@ -176,6 +182,7 @@ if __name__ == "__main__":
     parser.add_argument("--id", type=str, required=False, help="Obtional experiment identifier.", default=None)
     args = parser.parse_args()
 
+    
     main(args)
 
     
