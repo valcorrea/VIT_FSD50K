@@ -29,11 +29,6 @@ class LightningTransformer(L.LightningModule):
         mask = torch.cat([torch.zeros(batch_size, 1, device=mask.device), mask], dim=1).bool()
         return mask
     
-    def transform(self, spec):
-        spec = spec.expand(1, -1, -1, -1)
-        spec = spec.permute(1, 0, 2, 3)
-        return spec
-    
     def compute_var(self, y: torch.Tensor):
         """
         Function for computing standard deviation of target
@@ -45,7 +40,6 @@ class LightningTransformer(L.LightningModule):
     
     def training_step(self, batch, batch_idx):
         spec = batch
-        spec = self.transform(spec)
         mask = self.create_mask(spec)
         predictions, targets = self(spec, spec, mask)
 

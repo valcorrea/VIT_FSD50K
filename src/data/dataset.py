@@ -174,6 +174,7 @@ class SpectrogramDataset(Dataset):
             return real, label_tensor
         else:
             real, comp = self.__get_item_helper__(index)
+            real = self.transform(real)
             return real
 
     def __parse_labels__(self, lbls: str) -> torch.Tensor:
@@ -192,21 +193,6 @@ class SpectrogramDataset(Dataset):
     def get_bg_len(self):
         return len(self.bg_files)
     
-    # Weight calculation
-    #def calc_weights(self):
-
-        
-    #    from torch.utils.data import WeightedRandomSampler
-    #    counts = self.annotations['label'].value_counts() #replace self.annotations with equivalent
-    #    weights = []
-    #    for row in self.annotations.iterrows():
-    #        weights.append(1./counts[row[1]['label']])
-
-    #    weights = torch.FloatTensor(weights)
-    #    sampler = WeightedRandomSampler(weights, len(weights))
-    #    return sampler
-    
-
     def calc_weights(self):
         from torch.utils.data import WeightedRandomSampler
         # Initialize an empty array for weights
