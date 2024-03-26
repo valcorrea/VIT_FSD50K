@@ -22,7 +22,11 @@ def main(args):
     :param args: input arguments
     
     """
-
+    device = (
+        "cuda"
+        if torch.cuda.is_available()
+        else "mps" if torch.backends.mps.is_available() else "cpu"
+    )
     config = parse_config(args.conf)
 
     test_set = SpectrogramDataset(config['eval_manifest_path'],config['labels_map'],config['audio_config'])
@@ -39,10 +43,12 @@ def main(args):
     #test_set.len = len(test_set.files)
     print(len(test_set))
 
-    checkpoint = torch.load("outputs/best.pth") # loading checkpoint
-    model = KWT(**config['hparams']['KWT']) #loading model
-    model.load_state_dict(checkpoint['model_state_dict']) #loading state_dict
-    model.eval() #evaluation on test set
+    checkpoint = torch.load(
+        "outputs/best.pth", map_location=device
+    )  # loading checkpoint
+    model = KWT(**config["hparams"]["KWT"])  # loading model
+    model.load_state_dict(checkpoint["model_state_dict"])  # loading state_dict
+    model.eval()  # evaluation on test set
 
     # Loading test data and creating data loader
     test_loader = DataLoader(test_set, batch_size=1) #batch size equal to testset size
