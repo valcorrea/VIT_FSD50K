@@ -103,21 +103,7 @@ def training_pipeline(config):
 
       # Training loop
     print("Initiating training.")
-   # for epoch in range(config["hparams"]["n_epochs"]):
-    #    print("Current epoch:", epoch)
-     #   train_loss = train(model, optimizer, criterion, train_loader, val_loader, schedulers, config)
-       # val_loss, val_acc = evaluate(model, criterion, val_loader, config)
-
-        # Log metrics to wandb
-        #wandb.log({"train_loss": train_loss, "val_loss": val_loss, "val_acc": val_acc})
-     #   wandb.log({"train_loss:": train_loss})
-    # Save model
-    #torch.save(model.state_dict(), "final_model.pth")
-
-    # Log final model to wandb
-    #wandb.save("final_model.pth")
-    #wandb.finish()  # Finish wandb run after training
-
+ 
     train(model, optimizer, criterion, train_loader, val_loader, schedulers, config) 
     
     #####################################
