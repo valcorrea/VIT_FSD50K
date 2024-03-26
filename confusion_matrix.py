@@ -1,11 +1,9 @@
-"""Script for training KWT model"""
+"""Script for confusion matrix on test data"""
 from argparse import ArgumentParser
-#from torch import nn, optim
 from torch.utils.data import DataLoader
 import torch
 from torch import nn
-#import wandb
-#from utils.trainer import train, evaluate
+import wandb
 from src.data.dataset import SpectrogramDataset
 from utils.config_parser import parse_config
 from src.models.KWT import KWT
@@ -18,16 +16,15 @@ from tqdm import tqdm
 
 def main(args):
     """
-    Calls training pipeline and sets up wandb logging if used
-    :param args: input arguments
+    Loads best checkpoint from training run
+    Runs test loop using the test data 
+    Plots confusion matrix over results
     
     """
 
     config = parse_config(args.conf)
 
     test_set = SpectrogramDataset(config['eval_manifest_path'],config['labels_map'],config['audio_config'])
-    #test_loader = DataLoader(test_set, batch_size=config['hparams']['batch_size'],num_workers=5)
-    #classes = ('COVID-19', 'healthy', 'symptomatic')
     classes = {"COVID-19": 0, "healthy": 1, "symptomatic": 2}
     
 
@@ -35,9 +32,8 @@ def main(args):
     test_set.len = len(test_set.files)
     test_set.labels = test_set.labels[:100]
 
-    print(len(test_set.files))
-    #test_set.len = len(test_set.files)
-    print(len(test_set))
+    #print(len(test_set.files))
+    #print(len(test_set))
 
     checkpoint = torch.load("outputs/best.pth") # loading checkpoint
     model = KWT(**config['hparams']['KWT']) #loading model
@@ -45,7 +41,7 @@ def main(args):
     model.eval() #evaluation on test set
 
     # Loading test data and creating data loader
-    test_loader = DataLoader(test_set, batch_size=1) #batch size equal to testset size
+    test_loader = DataLoader(test_set, batch_size=1) #batch size 1, append later for memory preservation
     print(len(test_loader))
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -56,16 +52,16 @@ def main(args):
 
     # iterate over test data
     for spectrogram, labels in tqdm(test_loader):
-        spectrogram = spectrogram.expand(1, -1, -1, -1) # Create an extra empty dimension
-        spectrogram = spectrogram.permute(1, 0, 2, 3) # Permute so we have Batch - Channel - Width - Height
+        #spectrogram = spectrogram.expand(1, -1, -1, -1) # Create an extra empty dimension
+        #spectrogram = spectrogram.permute(1, 0, 2, 3) # Permute so we have Batch - Channel - Width - Height
         output = model(spectrogram) # Feed Network
-        predicted_labels.append(output.argmax(1))
-        true_labels.append(labels.argmax(1))
+        predicted_labels.append(output.argmax(1)) #argmax to find "hot one" in one hot encoding
+        true_labels.append(labels.argmax(1)) #argmax to find "hot one" in one hot encoding
         
     #print(predicted_labels)
     #print(true_labels)
-    predicted_labels = torch.flatten(torch.tensor(predicted_labels))
-    true_labels = torch.flatten(torch.tensor(true_labels))
+    predicted_labels = torch.flatten(torch.tensor(predicted_labels)) #flattening dimensions
+    true_labels = torch.flatten(torch.tensor(true_labels)) #flattening dimensions
     print(np.shape(predicted_labels))
     print(np.shape(true_labels))
     #print(predicted_labels)
@@ -73,20 +69,21 @@ def main(args):
     print(pd.Series(predicted_labels).value_counts())
     print(pd.Series(true_labels).value_counts())
 
-    # Computing confusion matrix
+    # Computing confusion matrix using sklearn function 
     cm = confusion_matrix(true_labels, predicted_labels)
 
-    #Plotting confusion matrix
+    # Plotting confusion matrix
     df_cm = pd.DataFrame(cm / np.sum(cm, axis=1)[:, None], index = [i for i in classes],
                         columns = [i for i in classes])
     plt.figure(figsize = (12,7))
-    plt.xlabel("Predicted Labels")
-    plt.ylabel("True Labels")
     plt.title("Confusion Matrix")
     sns.heatmap(df_cm, annot=True)
+    plt.xlabel("Predicted labels")
+    plt.ylabel("True labels")
     plt.savefig('confusion_matrix.png')
     plt.show()
 
+    
 
 if __name__ == "__main__":
 
