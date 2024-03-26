@@ -100,7 +100,7 @@ class LightningKWT(L.LightningModule):
         specs, targets = batch
         outputs = self(specs)
         loss = self.criterion(outputs, targets)
-        correct = outputs.argmax(1).eq(targets.argmax()).sum()
+        correct = outputs.argmax(1).eq(targets.argmax()).sum().float()
 
         self.log_dict({"train_loss": loss, "lr": self.optimizer.param_groups[0]["lr"],
                             "tr_correct_predictions": correct}, on_epoch=True, on_step=True, sync_dist=True)
@@ -110,7 +110,7 @@ class LightningKWT(L.LightningModule):
         specs, targets = batch
         outputs = self(specs)
         val_loss = self.criterion(outputs, targets)
-        correct = outputs.argmax(1).eq(targets.argmax()).sum()
+        correct = outputs.argmax(1).eq(targets.argmax()).sum().float()
         accuracy = correct / len(batch)
         self.log_dict({"val_loss": val_loss, "val_correct_predictions": correct, "val_accuracy": accuracy}, on_epoch=True, on_step=True, sync_dist=True)
         return val_loss
