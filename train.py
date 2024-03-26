@@ -70,9 +70,9 @@ def training_pipeline(config):
 
       # Make dataloaders
     train_loader = DataLoader(train_set, batch_size=config['hparams']['batch_size'], 
-    sampler= train_set.weighted_sampler)
+    sampler= train_set.weighted_sampler, num_workers=3)
     val_loader = DataLoader(val_set, batch_size=config['hparams']['batch_size'],
-    sampler= val_set.weighted_sampler)
+    sampler= val_set.weighted_sampler, num_workers=3)
     test_loader = DataLoader(test_set, batch_size=config['hparams']['batch_size'])
 
     #classes = ('COVID-19', 'healthy', 'symptomatic')
