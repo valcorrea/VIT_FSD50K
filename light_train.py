@@ -56,7 +56,7 @@ def training_pipeline(config, logger, ckpt_path):
     trainer = L.Trainer(max_epochs=config['hparams']['n_epochs'], 
                         logger=logger,
                         callbacks=callbacks,
-                        log_every_n_steps=50,
+                        log_every_n_steps=100,
                         strategy='ddp_find_unused_parameters_true')
     trainer.fit(model, train_loader, val_loader)
 
