@@ -7,8 +7,8 @@ import lightning as L
 from lightning.pytorch.loggers import WandbLogger
 from lightning.pytorch.callbacks import ModelCheckpoint, EarlyStopping
 
-from src.utils.ssformer_trainer import LightningTransformer
-from src.utils.config_parser import parse_config
+from utils.light_modules import LightningSSformer
+from utils.config_parser import parse_config
 from src.models.KWT import KWT
 from src.data.dataset import SpectrogramDataset
 
@@ -26,9 +26,9 @@ def training_pipeline(config, logger, ckpt_path):
 
     # Initialize SSformer
     if ckpt_path:
-        ssformer = LightningTransformer.load_from_checkpoint(ckpt_path, encoder=vit, config=config)
+        ssformer = LightningSSformer.load_from_checkpoint(ckpt_path, encoder=vit, config=config)
     else:
-        ssformer = LightningTransformer(encoder=vit, config=config)
+        ssformer = LightningSSformer(encoder=vit, config=config)
     ssformer.to(device)
 
     # Make dataset
