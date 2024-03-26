@@ -7,7 +7,7 @@ import lightning as L
 from transformers import get_cosine_schedule_with_warmup
 
 from src.models.ssformer import SSTransformer
-from src.utils.masking import AudioMaskingGenerator
+from utils.masking import AudioMaskingGenerator
 
 class LightningSSformer(L.LightningModule):
     def __init__(self,
