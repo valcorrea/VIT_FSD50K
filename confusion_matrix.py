@@ -31,7 +31,7 @@ def test_pipeline(config):
     #print(len(test_set.files))
     #print(len(test_set))
 
-    checkpoint = torch.load("outputs/best_non_augmented_run.pth") # loading checkpoint
+    checkpoint = torch.load("outputs/augmented_supervised_best.pth") # loading checkpoint
     model = KWT(**config['hparams']['KWT']) #loading model
     model.load_state_dict(checkpoint['model_state_dict']) #loading state_dict
     model.eval() #evaluation on test set
@@ -101,21 +101,18 @@ def test_pipeline(config):
     #A high area under the curve represents both high recall and high precision, where high precision relates to a low false positive rate,
     # and high recall relates to a low false negative rate. (from sklearn documentation) --> so we want both high recall and high precision for a good model
 
+    precision_recall_fig = plt.figure(figsize=(12, 7))
+
     for i in range(len(classes)):
         precision, recall, _ = precision_recall_curve(true_labels == i, predicted_labels == i)
         class_name = list(classes.keys())[list(classes.values()).index(i)]
         plt.plot(recall, precision, label=' {} (Precision = {:.2f}, Recall = {:.2f})'.format(class_name, precision_per_class[i], recall_per_class[i]))
-
-        # Annotate points with precision and recall
-        #plt.annotate('({:.2f}, {:.2f})'.format(recall_per_class[i], precision_per_class[i]), (recall[i], precision[i]))
-
     
-    precision_recall_fig = plt.figure(figsize = (12,7))
     plt.xlabel('Recall')
     plt.ylabel('Precision')
     plt.title('Precision-Recall Curve')
     plt.legend(loc='best')
-    plt.grid(True)  # Adding grid
+    plt.grid(True) 
     plt.savefig('precision_recall_curve.png')
     plt.show()
     
@@ -126,7 +123,7 @@ def test_pipeline(config):
     #This is not very realistic, but it does mean that a larger area under the curve (AUC) is usually better.
     #The “steepness” of ROC curves is also important, since it is ideal to maximize the true positive rate while minimizing the false positive rate.  (from sklearn documentation)
 
-
+    ROC_curve_fig = plt.figure(figsize=(12, 7))
     #for multi-class classification, it is necessary to binarize the output. One ROC curve can be drawn per label.
     for i in range(len(classes)):
         fpr, tpr, _ = roc_curve(true_labels == i, predicted_labels == i)
@@ -136,7 +133,7 @@ def test_pipeline(config):
 
 
     plt.plot([0, 1], [0, 1], color='navy', lw=2, linestyle='--')
-    ROC_fig = plt.figure(figsize = (12,7))
+    #ROC_fig = plt.figure(figsize = (12,7))
     plt.xlim([0.0, 1.0])
     plt.ylim([0.0, 1.05])
     plt.xlabel('False Positive (FP) Rate')
@@ -158,8 +155,10 @@ def test_pipeline(config):
 
     #logging to    #logging confusion matrix, precision-recall curve, ROC-curve to wandb
     wandb.log({'confusion_matrix.png' : wandb.Image(confusion_matrix_fig)}) 
-    wandb.log({'precision_recall_curve.png' : wandb.Image(precision_recall_fig)}) 
-    wandb.log({'precision_recall_curve.png' : wandb.Image(ROC_fig)}) 
+    # Logging precision-recall curve figure
+    wandb.log({'precision_recall_curve.png': wandb.Image(precision_recall_fig)})
+    # Logging ROC curve figure
+    wandb.log({'ROC_curve.png': wandb.Image(ROC_curve_fig)})
 
 
 def main(args):
@@ -205,6 +204,4 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     main(args)
-
-   
    
