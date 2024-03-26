@@ -33,11 +33,11 @@ def train_single_batch(net: nn.Module, data: torch.Tensor, targets: torch.Tensor
     #print(targets.dtype)
     #print(outputs.dtype)
     #exit()
-    loss = criterion(outputs, targets.long())
+    loss = criterion(outputs, targets)
     loss.backward()
     optimizer.step()
 
-    correct = outputs.argmax(1).eq(targets).sum()
+    correct = outputs.argmax(1).eq(targets.argmax(1)).sum()
     return loss.item(), correct.item()
 
 
@@ -68,14 +68,10 @@ def evaluate(net: nn.Module, criterion: Callable, dataloader: DataLoader, device
     running_loss = 0.0
 
     for spectrogram, targets in tqdm(dataloader):
-        spectrogram = spectrogram.expand(1, -1, -1, -1) # Create an extra empty dimension
-        spectrogram = spectrogram.permute(1, 0, 2, 3) # Permute so we have Batch - Channel - Width - Height
-        targets = targets[:,0]
-
         spectrogram, targets = spectrogram.to(device), targets.to(device)
         out = net(spectrogram)
-        correct += out.argmax(1).eq(targets).sum().item()
-        loss = criterion(out, targets.long())
+        correct += out.argmax(1).eq(targets.argmax(1)).sum().item()
+        loss = criterion(out, targets)
         running_loss += loss.item()
 
     net.train()
@@ -117,14 +113,6 @@ def train(net: nn.Module, optimizer: optim.Optimizer, criterion: Callable, train
 
         # Rearranging spectogram dimensiosn so that it fits with KWT model (Holgers)
         for spectrogram, targets in tqdm(train_loader):
-            spectrogram = spectrogram.expand(1, -1, -1, -1) # Create an extra empty dimension
-            spectrogram = spectrogram.permute(1, 0, 2, 3) # Permute so we have Batch - Channel - Width - Height
-            targets = targets[:,0]# all batches, first label
-
-            ####################
-            # optimization step
-            ####################
-
             loss, corr = train_single_batch(net, spectrogram, targets, optimizer, criterion, device)
             running_loss += loss
             correct += corr

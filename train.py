@@ -1,6 +1,7 @@
 """Script for training KWT model"""
 from argparse import ArgumentParser
 from torch import nn, optim
+from torch.optim.lr_scheduler import LRScheduler
 from torch.utils.data import DataLoader
 import torch
 from torch import nn
@@ -72,10 +73,7 @@ def training_pipeline(config):
     sampler= train_set.weighted_sampler)
     val_loader = DataLoader(val_set, batch_size=config['hparams']['batch_size'],
     sampler= val_set.weighted_sampler)
-    test_loader = DataLoader(test_set, batch_size=config['hparams']['batch_size'],
-    sampler = test_set.weighted_sampler)
-
-    
+    test_loader = DataLoader(test_set, batch_size=config['hparams']['batch_size'])
 
     #classes = ('COVID-19', 'healthy', 'symptomatic')
     classes = {"COVID-19": 0, "healthy": 1, "symptomatic": 2}
