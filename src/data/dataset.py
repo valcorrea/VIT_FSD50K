@@ -357,7 +357,7 @@ class SpecFeatDataset(Dataset):
         return len(self.files)
 
 if __name__ == '__main__':
-    from src.utils.config_parser import parse_config
+    from utils.config_parser import parse_config
     from torch.utils.data import DataLoader
     config = parse_config('configs/ssformer.cfg')
     manifest_path = r"C:\Users\vismi\Documents\datasets\covid19-cough\manidests\no_labeled_chunk.csv"
