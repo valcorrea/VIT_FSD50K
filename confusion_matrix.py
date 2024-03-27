@@ -20,44 +20,45 @@ import os
 
 def test_pipeline(config):
 
-    # Set device
+    # Setting up device
     device = (
         "cuda"
         if torch.cuda.is_available()
         else "mps" if torch.backends.mps.is_available() else "cpu"
     )
 
+    # Getting test data set
     test_set = SpectrogramDataset(config['eval_manifest_path'],config['labels_map'],config['audio_config'])
-    classes = {"COVID-19": 0, "healthy": 1, "symptomatic": 2}
+    classes = {"COVID-19": 0, "healthy": 1, "symptomatic": 2} # The 3 classes
     
     #For debugging/testing on smaller test data set
 
-    test_set.files = test_set.files[:100]
-    test_set.len = len(test_set.files)
-    test_set.labels = test_set.labels[:100]
+    #test_set.files = test_set.files[:100]
+    #test_set.len = len(test_set.files)
+    #test_set.labels = test_set.labels[:100]
 
-  
     #checkpoint = torch.load("outputs/augmented_supervised_best.pth") # loading checkpoint
     checkpoint = torch.load(args.ckpt)
     model = KWT(**config['hparams']['KWT']) #loading model
-    model.to(device); # Sending device to GPU
-    model.load_state_dict(checkpoint['model_state_dict']) #loading state_dict
-    model.eval() #evaluation on test set
+    model.to(device); # Sending model to device 
+    model.load_state_dict(checkpoint['model_state_dict']) # loading state_dict
+    model.eval() # setting model to evaluation mode
  
 
     # Loading test data and creating data loader
     test_loader = DataLoader(test_set, batch_size=1) #batch size 1, append later for memory preservation
-    print(len(test_loader))
+    #print(len(test_loader))
 
     # Evaluation loop
+    print("Initiating testing...")
     predicted_labels = []
     true_labels = []
 
     # iterate over test data
     for spectrogram, labels in tqdm(test_loader):
-        spectrogram = spectrogram.to(device)    
-        labels = labels.to(device)
-        output = model(spectrogram) # Feed Network
+        spectrogram = spectrogram.to(device)  #sending spectograms to device
+        labels = labels.to(device) # sending labels to device
+        output = model(spectrogram)  # feeding data to network
         predicted_labels.append(output.argmax(1)) #argmax to find "hot one" in one hot encoding
         true_labels.append(labels.argmax(1)) #argmax to find "hot one" in one hot encoding
         
@@ -172,7 +173,7 @@ def main(args):
     """
     Loads best checkpoint from training run
     Runs test loop using the test data 
-    Plots confusion matrix over results
+    Plots confusion matrix, precision-recall curve and ROC-curve over results
     
     """
 
