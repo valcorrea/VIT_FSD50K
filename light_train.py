@@ -45,8 +45,8 @@ def training_pipeline(config, logger, ckpt_path):
         config['hparams']['batch_size'] = 25
 
     # Make dataloaders
-    train_loader = DataLoader(train_set, batch_size=config['hparams']['batch_size'], num_workers=5, persistent_workers=True, sampler=train_set.weighted_sampler)
-    val_loader = DataLoader(val_set, batch_size=config['hparams']['batch_size'], num_workers=5, persistent_workers=True, sampler=val_set.weighted_sampler)
+    train_loader = DataLoader(train_set, batch_size=config['hparams']['batch_size'], num_workers=5, sampler=train_set.weighted_sampler)
+    val_loader = DataLoader(val_set, batch_size=config['hparams']['batch_size'], num_workers=5, sampler=val_set.weighted_sampler)
 
     # Create Callbacks
     model_checkpoint = ModelCheckpoint(monitor="val_loss", mode="min", verbose=True)
