@@ -20,27 +20,34 @@ import os
 
 def test_pipeline(config):
 
+    # Set device
+    device = (
+        "cuda"
+        if torch.cuda.is_available()
+        else "mps" if torch.backends.mps.is_available() else "cpu"
+    )
+
     test_set = SpectrogramDataset(config['eval_manifest_path'],config['labels_map'],config['audio_config'])
     classes = {"COVID-19": 0, "healthy": 1, "symptomatic": 2}
     
+    #For debugging/testing on smaller test data set
 
-    #test_set.files = test_set.files[:100]
-    #test_set.len = len(test_set.files)
-    #test_set.labels = test_set.labels[:100]
+    test_set.files = test_set.files[:100]
+    test_set.len = len(test_set.files)
+    test_set.labels = test_set.labels[:100]
 
-    #print(len(test_set.files))
-    #print(len(test_set))
-
-    checkpoint = torch.load("outputs/augmented_supervised_best.pth") # loading checkpoint
+  
+    #checkpoint = torch.load("outputs/augmented_supervised_best.pth") # loading checkpoint
+    checkpoint = torch.load(args.ckpt)
     model = KWT(**config['hparams']['KWT']) #loading model
+    model.to(device); # Sending device to GPU
     model.load_state_dict(checkpoint['model_state_dict']) #loading state_dict
     model.eval() #evaluation on test set
+ 
 
     # Loading test data and creating data loader
     test_loader = DataLoader(test_set, batch_size=1) #batch size 1, append later for memory preservation
     print(len(test_loader))
-
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     # Evaluation loop
     predicted_labels = []
@@ -48,8 +55,8 @@ def test_pipeline(config):
 
     # iterate over test data
     for spectrogram, labels in tqdm(test_loader):
-        #spectrogram = spectrogram.expand(1, -1, -1, -1) # Create an extra empty dimension
-        #spectrogram = spectrogram.permute(1, 0, 2, 3) # Permute so we have Batch - Channel - Width - Height
+        spectrogram = spectrogram.to(device)    
+        labels = labels.to(device)
         output = model(spectrogram) # Feed Network
         predicted_labels.append(output.argmax(1)) #argmax to find "hot one" in one hot encoding
         true_labels.append(labels.argmax(1)) #argmax to find "hot one" in one hot encoding
@@ -199,7 +206,7 @@ if __name__ == "__main__":
     
     parser = ArgumentParser("Driver code.")
     parser.add_argument("--conf", type=str, required=True, help="Path to config.yaml file.")
-    parser.add_argument("--ckpt", type=str, required=False, help="Path to checkpoint file.", default=None)
+    parser.add_argument("--ckpt", type=str, required=True, help="Path to checkpoint file.", default=None)
     parser.add_argument("--id", type=str, required=False, help="Optional experiment identifier.", default=None)
     args = parser.parse_args()
 
