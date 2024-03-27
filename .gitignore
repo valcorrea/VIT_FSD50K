@@ -172,5 +172,5 @@ tests/
 outputs/
 lightning_logs/
 .vscode/
-models/
+checkpoints/
 temp/
