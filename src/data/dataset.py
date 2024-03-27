@@ -250,6 +250,12 @@ class SpecFeatDataset(Dataset):
 
     def get_encoded_metadata(self, metadata_path):
         metadata = pd.read_csv(metadata_path)
+
+        # Fix missing values in age
+        age_median = metadata['age'].median()
+        mask = metadata['age'].isnull()
+        metadata.loc[mask,'age'] = age_median
+
         for column in ['gender', 'respiratory_condition', 'fever_muscle_pain']:
             metadata[column] = metadata[column].astype('category').cat.codes
         self.metadata = metadata
