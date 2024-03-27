@@ -231,6 +231,7 @@ class SpecFeatDataset(Dataset):
         assert audio_config is not None, 'Audio config is required.'
 
         # Read manifest, metadata, labels map
+        self.extrafeats = ['age', 'gender', 'respiratory_condition', 'fever_muscle_pain']
         self.get_encoded_metadata(metadata_path)
         with open(labels_map) as f:
             self.labels_map = json.load(f)
@@ -249,6 +250,7 @@ class SpecFeatDataset(Dataset):
         self.get_weighted_sampler()
 
     def get_encoded_metadata(self, metadata_path):
+        from sklearn.preprocessing import StandardScaler
         metadata = pd.read_csv(metadata_path)
 
         # Fix missing values in age
@@ -258,6 +260,8 @@ class SpecFeatDataset(Dataset):
 
         for column in ['gender', 'respiratory_condition', 'fever_muscle_pain']:
             metadata[column] = metadata[column].astype('category').cat.codes
+        scaler = StandardScaler(copy=False)
+        metadata[self.extrafeats] = scaler.fit_transform(metadata[self.extrafeats])
         self.metadata = metadata
 
     def get_weighted_sampler(self):
@@ -330,11 +334,7 @@ class SpecFeatDataset(Dataset):
     def __get_feats__(self, f):
         chunk_id = os.path.basename(f).replace('wav', '')
         mask = [uuid in chunk_id for uuid in self.metadata.uuid]
-        feats = self.metadata[mask][['SNR', 
-                                     'age', 
-                                     'gender', 
-                                     'respiratory_condition', 
-                                     'fever_muscle_pain']].values.flatten().tolist()
+        feats = self.metadata[mask][self.extrafeats].values.flatten().tolist()
         return torch.tensor(feats)
 
     def __get_item_helper__(

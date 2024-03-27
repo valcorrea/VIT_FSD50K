@@ -306,8 +306,8 @@ class KWT_extrafeats(nn.Module):
 
         # Create classification head
         self.mlp_head = nn.Sequential(
-            nn.LayerNorm(dim+5),
-            nn.Linear(dim+5, num_classes)
+            nn.LayerNorm(dim+4),
+            nn.Linear(dim+4, num_classes)
         )
 
     def forward(self, x, feats, mask=None, output_hidden_states=False, output_attentions=False):
