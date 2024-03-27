@@ -173,3 +173,4 @@ outputs/
 lightning_logs/
 .vscode/
 models/
+temp/
