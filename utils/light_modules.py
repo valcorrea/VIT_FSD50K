@@ -93,12 +93,12 @@ class LightningKWT(L.LightningModule):
         self.model = model
         self.config = config
         
-    def forward(self, inputs):
-        return self.model(inputs)
+    def forward(self, specs, feats):
+        return self.model(specs, feats)
     
     def training_step(self, batch, batch_idx):
-        specs, targets = batch
-        outputs = self(specs)
+        specs, feats, targets = batch
+        outputs = self(specs, feats)
         loss = self.criterion(outputs, targets)
         correct = outputs.argmax(1).eq(targets.argmax()).sum().float()
 
@@ -107,8 +107,8 @@ class LightningKWT(L.LightningModule):
         return loss
     
     def validation_step(self, batch, batch_idx):    
-        specs, targets = batch
-        outputs = self(specs)
+        specs, feats, targets = batch
+        outputs = self(specs, feats)
         val_loss = self.criterion(outputs, targets)
         correct = outputs.argmax(1).eq(targets.argmax()).sum().float()
         accuracy = correct / len(batch)
