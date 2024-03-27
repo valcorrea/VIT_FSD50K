@@ -9,8 +9,8 @@ from lightning.pytorch.callbacks import ModelCheckpoint, EarlyStopping
 
 from utils.config_parser import parse_config
 from utils.light_modules import LightningKWT
-from src.models.KWT import KWT
-from src.data.dataset import SpectrogramDataset
+from src.models.KWT import KWT_extrafeats
+from src.data.dataset import SpecFeatDataset
 
 
 def training_pipeline(config, logger, ckpt_path):
@@ -23,7 +23,7 @@ def training_pipeline(config, logger, ckpt_path):
     )
 
     # Initialize ViT
-    vit = KWT(**config['hparams']['KWT'])
+    vit = KWT_extrafeats(**config['hparams']['KWT'])
     vit.to(device);
 
     # Initialize lightning module from checkpoint if provided
@@ -34,8 +34,8 @@ def training_pipeline(config, logger, ckpt_path):
     model.to(device)
 
     # Make datasets
-    train_set = SpectrogramDataset(config['tr_manifest_path'], labels_map=config['labels_map'], audio_config=config['audio_config'], augment=True)
-    val_set = SpectrogramDataset(config['val_manifest_path'], labels_map=config['labels_map'], audio_config=config['audio_config'])
+    train_set = SpecFeatDataset(manifest_path=config['tr_manifest_path'], labels_map=config['labels_map'], metadata_path=config['tr_metadata'], audio_config=config['audio_config'], augment=True)
+    val_set = SpecFeatDataset(manifest_path=config['val_manifest_path'], labels_map=config['labels_map'], metadata_path=config['val_metadata'], audio_config=config['audio_config'], augment=False)
 
     if config['dev_mode']:
         train_set.files = train_set.files[:50]
@@ -45,8 +45,8 @@ def training_pipeline(config, logger, ckpt_path):
         config['hparams']['batch_size'] = 25
 
     # Make dataloaders
-    train_loader = DataLoader(train_set, batch_size=config['hparams']['batch_size'], num_workers=5, sampler=train_set.weighted_sampler)
-    val_loader = DataLoader(val_set, batch_size=config['hparams']['batch_size'], num_workers=5, sampler=val_set.weighted_sampler)
+    train_loader = DataLoader(train_set, batch_size=config['hparams']['batch_size'], num_workers=0 )
+    val_loader = DataLoader(val_set, batch_size=config['hparams']['batch_size'], num_workers=0)
 
     # Create Callbacks
     model_checkpoint = ModelCheckpoint(monitor="val_loss", mode="min", verbose=True)
@@ -69,6 +69,10 @@ def main(args):
         config['val_manifest_path'] = args.val_manifest_path
     if args.labels_map:
         config['labels_map'] = args.labels_map
+    if args.tr_metadata:
+        config['tr_metadata'] = args.tr_metadata
+    if args.val_metadata:
+        config['val_metadata'] = args.val_metadata
     config['dev_mode'] = args.dev_mode
     
     if args.id:
@@ -98,6 +102,8 @@ if __name__ == '__main__':
     ap.add_argument('--tr_manifest_path', type=str, help='Path to the unlabeled train data manifest.')
     ap.add_argument('--val_manifest_path', type=str, help='Path to the unlabeled val data manifest.')
     ap.add_argument('--labels_map', type=str, help='Path to lbl_map.json')
+    ap.add_argument('--tr_metadata', type=str, help='Path to metadata file')
+    ap.add_argument('--val_metadata', type=str, help='Path to metadata file')
     ap.add_argument('--ckpt_path', type=str, help='Path to model checkpoint.')
     ap.add_argument('--dev_mode', action='store_true', help='Flag to limit the dataset for testing purposes.')
     args = ap.parse_args()
