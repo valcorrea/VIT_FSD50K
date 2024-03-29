@@ -49,7 +49,7 @@ def test_pipeline(config):
     # test_set.labels = test_set.labels[:100]
 
     # checkpoint = torch.load("outputs/augmented_supervised_best.pth") # loading checkpoint
-    checkpoint = torch.load(args.ckpt)
+    checkpoint = torch.load(args.ckpt,map_location=device)
     model = KWT(**config["hparams"]["KWT"])  # loading model
     model.to(device)
     # Sending model to device
