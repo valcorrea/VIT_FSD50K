@@ -1,11 +1,7 @@
-from utils.light_modules import LightningKWT
-from src.models.KWT import KWT_extrafeats as KWT
 from utils.config_parser import parse_config
 from argparse import ArgumentParser
 import torch
-import os
 import wandb
-from src.data.dataset import SpecFeatDataset
 from torch.utils.data import DataLoader
 from matplotlib import pyplot as plt
 from sklearn.metrics import confusion_matrix, precision_score, recall_score, precision_recall_curve, roc_curve, auc
@@ -24,30 +20,45 @@ def get_model(ckpt, extra_feats, config):
     )
     if extra_feats:
         from utils.light_modules import LightningKWT_extrafeats
-        if ckpt:
-            print('Loading from checkpoint')
-            model = LightningKWT_extrafeats.load_from_checkpoint(ckpt, config=config)
-        else:
-            model = LightningKWT_extrafeats(config)
+        model = LightningKWT_extrafeats.load_from_checkpoint(ckpt, config=config)
+        
     else:
         from utils.light_modules import LightningKWT
-        if ckpt:
-            print('Loading from checkpoint')
-            model = LightningKWT.load_from_checkpoint(ckpt, config=config)
-        else:
-            model = LightningKWT(config)
+        model = LightningKWT.load_from_checkpoint(ckpt, config=config)
+        
     model.to(device)
     return model, device
 
-def get_dataloader(config):
-    test_set = SpecFeatDataset(manifest_path=config['eval_manifest_path'],labels_map=config['labels_map'],audio_config=config['audio_config'], augment=False, metadata_path=config['metadata_path'])
+def get_dataloader(config, extra_feats):
+    if extra_feats:
+        from src.data.dataset import SpecFeatDataset
+        test_set = SpecFeatDataset(manifest_path=config['eval_manifest_path'],labels_map=config['labels_map'],audio_config=config['audio_config'], augment=False, metadata_path=config['metadata_path'])
+    else:
+        from src.data.dataset import SpectrogramDataset
+        test_set = SpecFeatDataset(manifest_path=config['eval_manifest_path'],labels_map=config['labels_map'],audio_config=config['audio_config'], augment=False)
+    
     classes = {"COVID-19": 0, "healthy": 1, "symptomatic": 2} # The 3 classes
-
     test_loader = DataLoader(test_set, batch_size=50)
     return test_loader, classes
 
-def test_pipeline(model, test_loader, device, classes):
-    print("Initiating testing...")
+def get_predictions(device, model, test_loader):
+    predicted_labels = torch.tensor([]).to(device)
+    true_labels = torch.tensor([]).to(device)
+
+    for specs, labels in tqdm(test_loader):
+        specs = specs.to(device)  #sending spectograms to device
+        feats = feats.to(device)
+        labels = labels.to(device) # sending labels to device
+        output = model(specs)  # feeding data to network
+        predicted_labels = torch.cat((predicted_labels, output.argmax(1))) #argmax to find "hot one" in one hot encoding
+        true_labels = torch.cat((true_labels, labels.argmax(1))) #argmax to find "hot one" in one hot encoding
+        break
+        
+    predicted_labels = torch.flatten(predicted_labels).cpu() #flattening dimensions
+    true_labels = torch.flatten(true_labels).cpu() #flattening dimensions
+    return predicted_labels, true_labels
+
+def get_predictions_extra_feats(device, model, test_loader):
     predicted_labels = torch.tensor([]).to(device)
     true_labels = torch.tensor([]).to(device)
 
@@ -58,9 +69,18 @@ def test_pipeline(model, test_loader, device, classes):
         output = model(specs, feats)  # feeding data to network
         predicted_labels = torch.cat((predicted_labels, output.argmax(1))) #argmax to find "hot one" in one hot encoding
         true_labels = torch.cat((true_labels, labels.argmax(1))) #argmax to find "hot one" in one hot encoding
+        break
         
     predicted_labels = torch.flatten(predicted_labels).cpu() #flattening dimensions
     true_labels = torch.flatten(true_labels).cpu() #flattening dimensions
+    return predicted_labels, true_labels
+
+def test_pipeline(model, test_loader, device, classes, extra_feats):
+    print("Initiating testing...")
+    if extra_feats:
+        predicted_labels, true_labels = get_predictions_extra_feats(device, model, test_loader)
+    else:
+        predicted_labels, true_labels = get_predictions(device, model, test_loader)
 
     # Creating confusion matrix using sklearn function 
     cm = confusion_matrix(true_labels, predicted_labels)
@@ -176,7 +196,7 @@ def main(args):
 
     # Logging setup
     if args.id:
-        config["exp"]["exp_name"] = config["exp"]["exp_name"] 
+        config["exp"]["exp_name"] = config["exp"]["exp_name"] + args.id
 
     if config["exp"]["wandb"]:
         wandb.login()
