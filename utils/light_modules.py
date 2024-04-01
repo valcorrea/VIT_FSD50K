@@ -57,10 +57,9 @@ class LightningSSformer(L.LightningModule):
 
         self.log_dict({"train_loss": loss, "lr": self.optimizer.param_groups[0]["lr"],
                             "target_var": target_var, "prediction_var": prediction_var}, on_epoch=True, on_step=True, sync_dist=True)
-        return loss
-    
-    def on_train_epoch_end(self):
+        
         self.model.ema_step()
+        return loss        
     
     def validation_step(self, batch, batch_idx):
         spec = batch
