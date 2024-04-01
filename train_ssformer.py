@@ -1,3 +1,7 @@
+'''
+Script to train a Self-Supervised ViT
+'''
+
 import os
 import wandb
 
@@ -57,9 +61,7 @@ def training_pipeline(config, logger, ckpt_path):
                         callbacks=callbacks,
                         log_every_n_steps=5,
                         strategy='ddp_find_unused_parameters_true')
-    trainer.fit(ssformer, train_loader, val_loader)
-    
-    
+    trainer.fit(ssformer, train_loader, val_loader) 
 
 def main(args):
 
@@ -95,7 +97,6 @@ def main(args):
     else:
         logger = None
         training_pipeline(config, logger, args.ckpt_path)
-
 
 if __name__ == '__main__':
     from argparse import ArgumentParser
