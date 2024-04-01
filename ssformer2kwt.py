@@ -52,7 +52,7 @@ if __name__ == '__main__':
     ap.add_argument('--model_path', type=str, required=True, help='Path to the ssformer model checkpoint')
     ap.add_argument('--out_dir', type=str, required=False, help='Directory to save the new checkpoint.')
     ap.add_argument('--filename', type=str, required=False, help='Name of the new checkpoint.')
-    ap.add_argument('--task', type=str, choices=['ssformer2kwt, ssformer2kwtlight, kwtlight2kwt'])
+    ap.add_argument('--task', type=str, choices=['ssformer2kwt', 'ssformer2kwtlight', 'kwtlight2kwt'])
     args = ap.parse_args()
 
     model = load_model(args.model_path)
