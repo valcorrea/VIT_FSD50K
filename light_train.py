@@ -32,13 +32,15 @@ def get_model(ckpt, extra_feats, config):
     if extra_feats:
         from utils.light_modules import LightningKWT_extrafeats
         if ckpt:
-            model = LightningKWT_extrafeats.load_from_checkpoint(ckpt, config)
+            print('Loading from checkpoint')
+            model = LightningKWT_extrafeats.load_from_checkpoint(ckpt, config=config)
         else:
             model = LightningKWT_extrafeats(config)
     else:
         from utils.light_modules import LightningKWT
         if ckpt:
-            model = LightningKWT.load_from_checkpoint(ckpt, config)
+            print('Loading from checkpoint')
+            model = LightningKWT.load_from_checkpoint(ckpt, config=config)
         else:
             model = LightningKWT(config)
     model.to(device)
@@ -48,8 +50,8 @@ def get_dataloaders(extra_feats, config):
     # Make datasets
     if extra_feats:
         from src.data.dataset import SpecFeatDataset
-        train_set = SpecFeatDataset(manifest_path=config['tr_manifest_path'], metadata_path=config['metadata'], labels_map=config['labels_map'], audio_config=config['audio_config'], augment=True)
-        val_set = SpecFeatDataset(manifest_path=config['val_manifest_path'], metadata_path=config['metadata'], labels_map=config['labels_map'], audio_config=config['audio_config'], augment=False)
+        train_set = SpecFeatDataset(manifest_path=config['tr_manifest_path'], metadata_path=config['tr_metadata_path'], labels_map=config['labels_map'], audio_config=config['audio_config'], augment=True)
+        val_set = SpecFeatDataset(manifest_path=config['val_manifest_path'], metadata_path=config['val_metadata_path'], labels_map=config['labels_map'], audio_config=config['audio_config'], augment=False)
     else:
         from src.data.dataset import SpectrogramDataset
         train_set = SpectrogramDataset(manifest_path=config['tr_manifest_path'], labels_map=config['labels_map'], audio_config=config['audio_config'], augment=True)
@@ -96,7 +98,7 @@ def main(args):
     else:
         logger = None
     
-    model = get_model(args.ckpt, args.extra_feats, config)
+    model = get_model(args.ckpt_path, args.extra_feats, config)
     train_loader, val_loader = get_dataloaders(args.extra_feats, config)
     training_pipeline(config, logger, model, train_loader, val_loader)
 
