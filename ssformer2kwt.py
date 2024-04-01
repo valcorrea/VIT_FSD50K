@@ -22,6 +22,13 @@ def change_keys(model:dict, lightning:bool) -> dict:
             model['state_dict'][item.replace('model.encoder.', '')] = model['state_dict'].pop(item)
     return model
 
+#TODO: Actually implement this into main
+def change_keys_KWTL2KWT(model:dict, lightning:bool) -> dict:
+    model['model_state_dict'] = model.pop('state_dict')
+    for item in model['model_state_dict'].copy().keys():
+        model['model_state_dict'][item.replace('model.', '')] = model['model_state_dict'].pop(item)
+    return model
+
 def save_model(model:dict, out_dir:str, filename:str):
     print(f'Saving model to: {os.path.join(out_dir, filename)}')
     torch.save(model, os.path.join(out_dir, filename))
