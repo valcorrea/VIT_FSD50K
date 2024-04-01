@@ -15,13 +15,29 @@ import seaborn as sns
 import numpy as np
 
 
-def load_model(ckpt_path, config, device):
-    vit = KWT(**config['hparams']['KWT'])
-    vit.to(device);
-    model = LightningKWT.load_from_checkpoint(ckpt_path, model=vit, config=config)
+def get_model(ckpt, extra_feats, config):
+    # Set device
+    device = (
+        "cuda"
+        if torch.cuda.is_available()
+        else "mps" if torch.backends.mps.is_available() else "cpu"
+    )
+    if extra_feats:
+        from utils.light_modules import LightningKWT_extrafeats
+        if ckpt:
+            print('Loading from checkpoint')
+            model = LightningKWT_extrafeats.load_from_checkpoint(ckpt, config=config)
+        else:
+            model = LightningKWT_extrafeats(config)
+    else:
+        from utils.light_modules import LightningKWT
+        if ckpt:
+            print('Loading from checkpoint')
+            model = LightningKWT.load_from_checkpoint(ckpt, config=config)
+        else:
+            model = LightningKWT(config)
     model.to(device)
-    model.eval()
-    return model
+    return model, device
 
 def get_dataloader(config):
     test_set = SpecFeatDataset(manifest_path=config['eval_manifest_path'],labels_map=config['labels_map'],audio_config=config['audio_config'], augment=False, metadata_path=config['metadata_path'])
@@ -30,15 +46,7 @@ def get_dataloader(config):
     test_loader = DataLoader(test_set, batch_size=50)
     return test_loader, classes
 
-def test_pipeline(config, ckpt):
-    device = (
-        "cuda"
-        if torch.cuda.is_available()
-        else "mps" if torch.backends.mps.is_available() else "cpu"
-    )
-    model = load_model(ckpt, config, device)
-    test_loader, classes = get_dataloader(config)
-
+def test_pipeline(model, test_loader, device, classes):
     print("Initiating testing...")
     predicted_labels = torch.tensor([]).to(device)
     true_labels = torch.tensor([]).to(device)
@@ -160,28 +168,31 @@ def main(args):
     Loads best checkpoint from training run
     Runs test loop using the test data 
     Plots confusion matrix, precision-recall curve and ROC-curve over results
-    
     """
 
     config = parse_config(args.conf)
+    model, device = get_model(args.ckpt, args.extra_feats, config)
+    test_loader, classes = get_dataloader(config)
 
-    """"for logging in wandb"""
+    # Logging setup
     if args.id:
         config["exp"]["exp_name"] = config["exp"]["exp_name"] 
 
     if config["exp"]["wandb"]:
         wandb.login()
-
         with wandb.init(project=config["exp"]["proj_name"], name=config["exp"]["exp_name"], config=config["hparams"],entity=config["exp"]["entity"]):
-            test_pipeline(config, args.ckpt)
+            test_pipeline(model, test_loader, device, classes)
+
     else:
-        test_pipeline(config, args.ckpt)    
+        test_pipeline(model, test_loader, device, classes)
+    
 
 if __name__ == "__main__":
     parser = ArgumentParser("Driver code.")
     parser.add_argument("--conf", type=str, required=True, help="Path to config.yaml file.")
     parser.add_argument("--ckpt", type=str, required=True, help="Path to checkpoint file.", default=None)
     parser.add_argument("--id", type=str, required=False, help="Optional experiment identifier.", default=None)
+    parser.add_argument("--extra_feats", action='store_true')    
     args = parser.parse_args()
 
     main(args)
