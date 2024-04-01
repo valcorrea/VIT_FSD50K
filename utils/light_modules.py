@@ -7,6 +7,7 @@ import lightning as L
 from transformers import get_cosine_schedule_with_warmup
 
 from src.models.ssformer import SSTransformer
+from src.models.KWT import KWT, KWT_extrafeats
 from utils.masking import AudioMaskingGenerator
 
 class LightningSSformer(L.LightningModule):
@@ -85,11 +86,10 @@ class LightningSSformer(L.LightningModule):
 
 class LightningKWT(L.LightningModule):
     def __init__(self,
-                 model: nn.Module,
                  config):
         super().__init__()
         self.criterion = nn.CrossEntropyLoss()
-        self.model = model
+        self.model = KWT(**config['hparams']['KWT'])
         self.config = config
         
     def forward(self, specs):
@@ -124,11 +124,10 @@ class LightningKWT(L.LightningModule):
     
 class LightningKWT_extrafeats(L.LightningModule):
     def __init__(self,
-                 model: nn.Module,
                  config):
         super().__init__()
         self.criterion = nn.CrossEntropyLoss()
-        self.model = model
+        self.model = KWT_extrafeats(**config['hparams']['KWT'])
         self.config = config
         
     def forward(self, specs, feats):
