@@ -52,7 +52,6 @@ def get_predictions(device, model, test_loader):
         output = model(specs)  # feeding data to network
         predicted_labels = torch.cat((predicted_labels, output.argmax(1))) #argmax to find "hot one" in one hot encoding
         true_labels = torch.cat((true_labels, labels.argmax(1))) #argmax to find "hot one" in one hot encoding
-        break
         
     predicted_labels = torch.flatten(predicted_labels).cpu() #flattening dimensions
     true_labels = torch.flatten(true_labels).cpu() #flattening dimensions
@@ -69,7 +68,6 @@ def get_predictions_extra_feats(device, model, test_loader):
         output = model(specs, feats)  # feeding data to network
         predicted_labels = torch.cat((predicted_labels, output.argmax(1))) #argmax to find "hot one" in one hot encoding
         true_labels = torch.cat((true_labels, labels.argmax(1))) #argmax to find "hot one" in one hot encoding
-        break
         
     predicted_labels = torch.flatten(predicted_labels).cpu() #flattening dimensions
     true_labels = torch.flatten(true_labels).cpu() #flattening dimensions
@@ -192,7 +190,7 @@ def main(args):
 
     config = parse_config(args.conf)
     model, device = get_model(args.ckpt, args.extra_feats, config)
-    test_loader, classes = get_dataloader(config)
+    test_loader, classes = get_dataloader(config, args.extra_feats)
 
     # Logging setup
     if args.id:
@@ -201,10 +199,10 @@ def main(args):
     if config["exp"]["wandb"]:
         wandb.login()
         with wandb.init(project=config["exp"]["proj_name"], name=config["exp"]["exp_name"], config=config["hparams"],entity=config["exp"]["entity"]):
-            test_pipeline(model, test_loader, device, classes)
+            test_pipeline(model, test_loader, device, classes, args.extra_feats)
 
     else:
-        test_pipeline(model, test_loader, device, classes)
+        test_pipeline(model, test_loader, device, classes, args.extra_feats)
     
 
 if __name__ == "__main__":
