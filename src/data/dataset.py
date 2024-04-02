@@ -171,7 +171,6 @@ class SpectrogramDataset(Dataset):
             if self.augment:
                 real = time_warp(real)
                 real = self.masking(real)
-
             return real, label_tensor
         else:
             real, comp = self.__get_item_helper__(index)
