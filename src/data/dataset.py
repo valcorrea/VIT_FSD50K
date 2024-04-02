@@ -355,7 +355,6 @@ class SpecFeatDataset(Dataset):
         real, comp, feats, targets = self.__get_item_helper__(index)
         real = self.transform(real)
         if self.augment:
-            real = time_wrap(real)
             real = self.masking(real)
 
         return real, feats, targets
