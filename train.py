@@ -22,6 +22,7 @@ Run script with configuration file as argument
 
 command: srun --time=4:00:00 --gres=gpu:1 singularity exec --nv <your_singularity_container_here> python train.py --conf KWT_configs/KWT_config.cfg
 
+srun --gres=gpu:1 singularity exec --nv ~/pytorch-24.01/ python train.py --conf KWT_configs/KWT_config.cfg --ckpt ../models/ssformer_200E_valid.ckpt
 """
 
 def training_pipeline(config):
@@ -45,8 +46,8 @@ def training_pipeline(config):
     model.to(device); # Sending device to GPU
 
     if args.ckpt:
-        checkpoint = torch.load(args.ckpt)
-        #print(checkpoint.keys())  # Print out the keys
+        checkpoint = torch.load(args.ckpt, map_location=device)
+        # print(checkpoint.keys())  # Print out the keys
         # Look for the correct key for the model state di
         model.load_state_dict(checkpoint['state_dict'])
 
@@ -120,7 +121,9 @@ def training_pipeline(config):
     log(log_dict, final_step, config)
 
     # evaluating the best validation state (best.pth)
-    ckpt = torch.load(os.path.join(config["exp"]["save_dir"], "best.pth"))
+    ckpt = torch.load(
+        os.path.join(config["exp"]["save_dir"], "best.pth"), map_location=device
+    )
     model.load_state_dict(ckpt["model_state_dict"])
     print("Best ckpt loaded.")
 
@@ -166,6 +169,19 @@ def main(args):
         training_pipeline(config)
 
 if __name__ == "__main__":
+    
+    if not torch.backends.mps.is_available():
+        if not torch.backends.mps.is_built():
+            print(
+                "MPS not available because the current PyTorch install was not "
+                "built with MPS enabled."
+            )
+        else:
+            print(
+                "MPS not available because the current MacOS version is not 12.3+ "
+                "and/or you do not have an MPS-enabled device on this machine."
+            )
+            
     parser = ArgumentParser("Driver code.")
     parser.add_argument("--conf", type=str, required=True, help="Path to config.yaml file.")
     parser.add_argument("--ckpt", type=str, required=False, help="Path to checkpoint file.", default=None)
