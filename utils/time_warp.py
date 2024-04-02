@@ -16,6 +16,31 @@ import random
 import numpy as np
 import torch
 
+def time_warp(spec, W=-10):
+    num_rows = spec.shape[2]
+    spec_len = spec.shape[1]
+    device = spec.device
+
+    # adapted from https://github.com/DemisEom/SpecAugment/
+    pt = (num_rows - 2* W) * torch.rand([1], dtype=torch.float) + W # random point along the time axis
+    src_ctr_pt_freq = torch.arange(0, spec_len // 2)  # control points on freq-axis
+    src_ctr_pt_time = torch.ones_like(src_ctr_pt_freq) * pt  # control points on time-axis
+    src_ctr_pts = torch.stack((src_ctr_pt_freq, src_ctr_pt_time), dim=-1)
+    src_ctr_pts = src_ctr_pts.float().to(device)
+
+    # Destination
+    w = 2 * W * torch.rand([1], dtype=torch.float) - W# distance
+    dest_ctr_pt_freq = src_ctr_pt_freq
+    dest_ctr_pt_time = src_ctr_pt_time + w
+    dest_ctr_pts = torch.stack((dest_ctr_pt_freq, dest_ctr_pt_time), dim=-1)
+    dest_ctr_pts = dest_ctr_pts.float().to(device)
+
+    # warp
+    source_control_point_locations = torch.unsqueeze(src_ctr_pts, 0)  # (1, v//2, 2)
+    dest_control_point_locations = torch.unsqueeze(dest_ctr_pts, 0)  # (1, v//2, 2)
+    warped_spectro, dense_flows = sparse_image_warp(spec, source_control_point_locations, dest_control_point_locations)
+    return warped_spectro.squeeze(3)
+
 def sparse_image_warp(img_tensor,
                       source_control_point_locations,
                       dest_control_point_locations,
