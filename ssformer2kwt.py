@@ -1,12 +1,11 @@
 import os
-
 import torch
 
 '''
 Script to change an SSformer saved model to match KWT.
 '''
 
-def load_model(model_path:str) -> dict:
+def load_model(model_path:str, device:torch.device) -> dict:
     return torch.load(model_path, map_location=device)
 
 def change_keys(model:dict, lightning:bool) -> dict:
@@ -58,7 +57,7 @@ if __name__ == '__main__':
 
     device = ("cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")
 
-    model = load_model(args.model_path)
+    model = load_model(args.model_path, device)
     if args.task == 'ssformer2kwt':
         model = change_keys(model, lightning=False)
     elif args.task == 'ssformer2kwtlight':
