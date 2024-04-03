@@ -15,4 +15,4 @@ if __name__ == '__main__':
     ap.add_argument('root_dir', type=str, help='Directory containing wav files.')
     args = ap.parse_args()
 
-    main(args)
+    main(args.root_dir)
