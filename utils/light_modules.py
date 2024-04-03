@@ -109,7 +109,7 @@ class LightningKWT(L.LightningModule):
         outputs = self(specs)
         val_loss = self.criterion(outputs, targets)
         correct = outputs.argmax(1).eq(targets.argmax(1)).sum().float()
-        accuracy = correct / len(batch)
+        accuracy = correct / targets.shape[0]
         self.log_dict({"val_loss": val_loss, "val_correct_predictions": correct, "val_accuracy": accuracy}, on_epoch=True, on_step=True, sync_dist=True)
         return val_loss
 
