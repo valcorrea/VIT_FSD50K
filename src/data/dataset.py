@@ -22,7 +22,7 @@ from torchaudio.transforms import TimeMasking, FrequencyMasking
 
 from src.data.audio_parser import AudioParser
 from src.data.utils import load_audio
-
+from utils.time_warp import time_warp
 
 class SpectrogramDataset(Dataset):
     def __init__(
@@ -169,8 +169,8 @@ class SpectrogramDataset(Dataset):
             real = self.transform(real)
             # Apply data augmentations
             if self.augment:
+                real = time_warp(real)
                 real = self.masking(real)
-
             return real, label_tensor
         else:
             real, comp = self.__get_item_helper__(index)
