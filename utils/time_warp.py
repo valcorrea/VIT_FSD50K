@@ -71,7 +71,7 @@ def sparse_image_warp(img_tensor,
 def get_grid_locations(image_height, image_width, device):
     y_range = torch.linspace(0, image_height - 1, image_height, device=device)
     x_range = torch.linspace(0, image_width - 1, image_width, device=device)
-    y_grid, x_grid = torch.meshgrid(y_range, x_range)
+    y_grid, x_grid = torch.meshgrid(y_range, x_range, indexing='ij')
     return torch.stack((y_grid, x_grid), -1)
 
 def flatten_grid_locations(grid_locations, image_height, image_width):
@@ -80,7 +80,7 @@ def flatten_grid_locations(grid_locations, image_height, image_width):
 def get_flat_grid_locations(image_height, image_width, device):
     y_range = torch.linspace(0, image_height - 1, image_height, device=device)
     x_range = torch.linspace(0, image_width - 1, image_width, device=device)
-    y_grid, x_grid = torch.meshgrid(y_range, x_range)
+    y_grid, x_grid = torch.meshgrid(y_range, x_range, indexing='ij')
     return torch.stack((y_grid, x_grid), -1).reshape([image_height * image_width, 2])
 
 def create_dense_flows(flattened_flows, batch_size, image_height, image_width):
