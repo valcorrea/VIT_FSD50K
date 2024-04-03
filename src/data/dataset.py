@@ -169,7 +169,7 @@ class SpectrogramDataset(Dataset):
             real = self.transform(real)
             # Apply data augmentations
             if self.augment:
-                real = time_warp(real)
+                # real = time_warp(real)
                 real = self.masking(real)
             return real, label_tensor
         else:
