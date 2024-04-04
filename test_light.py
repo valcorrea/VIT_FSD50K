@@ -35,7 +35,7 @@ def get_dataloader(config, extra_feats):
         test_set = SpecFeatDataset(manifest_path=config['eval_manifest_path'],labels_map=config['labels_map'],audio_config=config['audio_config'], augment=False, metadata_path=config['metadata_path'])
     else:
         from src.data.dataset import SpectrogramDataset
-        test_set = SpecFeatDataset(manifest_path=config['eval_manifest_path'],labels_map=config['labels_map'],audio_config=config['audio_config'], augment=False)
+        test_set = SpectrogramDataset(manifest_path=config['eval_manifest_path'],labels_map=config['labels_map'],audio_config=config['audio_config'], augment=False)
     
     classes = {"COVID-19": 0, "healthy": 1, "symptomatic": 2} # The 3 classes
     test_loader = DataLoader(test_set, batch_size=50)
@@ -47,7 +47,6 @@ def get_predictions(device, model, test_loader):
 
     for specs, labels in tqdm(test_loader):
         specs = specs.to(device)  #sending spectograms to device
-        feats = feats.to(device)
         labels = labels.to(device) # sending labels to device
         output = model(specs)  # feeding data to network
         predicted_labels = torch.cat((predicted_labels, output.argmax(1))) #argmax to find "hot one" in one hot encoding
