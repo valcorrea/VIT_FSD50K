@@ -8,6 +8,7 @@ import time
 from tqdm import tqdm
 
 
+
 def train_single_batch(net: nn.Module, data: torch.Tensor, targets: torch.Tensor, optimizer: optim.Optimizer, criterion: Callable, device: torch.device) -> Tuple[float, int]:
     """Performs a single training step.
 
@@ -41,6 +42,7 @@ def train_single_batch(net: nn.Module, data: torch.Tensor, targets: torch.Tensor
     return loss.item(), correct.item()
 
 
+
 @torch.no_grad()
 def evaluate(net: nn.Module, criterion: Callable, dataloader: DataLoader, device: torch.device) -> Tuple[float, float]:
     """Performs inference.
@@ -61,16 +63,16 @@ def evaluate(net: nn.Module, criterion: Callable, dataloader: DataLoader, device
         if torch.cuda.is_available()
         else "mps" if torch.backends.mps.is_available() else "cpu"
     )
-    # log_file = os.path.join(config["exp"]["save_dir"], "training_log.txt")
-    net.eval()
 
+    net.eval()
     correct = 0
     running_loss = 0.0
 
     for spectrogram, targets in tqdm(dataloader):
         spectrogram, targets = spectrogram.to(device), targets.to(device)
         out = net(spectrogram)
-        correct += out.argmax(1).eq(targets.argmax(1)).sum().item()
+        #correct += out.argmax(1).eq(targets).sum().item()
+        correct = out.argmax(1).eq(targets.argmax(1)).sum()
         loss = criterion(out, targets)
         running_loss += loss.item()
 
@@ -158,3 +160,5 @@ def train(net: nn.Module, optimizer: optim.Optimizer, criterion: Callable, train
     # save final ckpt
     save_path = os.path.join(config["exp"]["save_dir"], "last.pth")
     save_model(epoch, val_acc, save_path, net, optimizer, log_file)
+
+    

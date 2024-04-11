@@ -1,0 +1,1 @@
+Saved /home/student.aau.dk/saales20/local-global-Mul-Head-Attention/VIT_FSD50K/model_checkpoints/last.pth with accuracy 0.0.
