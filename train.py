@@ -13,7 +13,6 @@ from src.data.fsd50k_dataset import SpectrogramDataset
 from utils.config_parser import parse_config
 from src.models.KWT import KWT
 from utils.misc import seed_everything, count_params, get_model, calc_step, log
-#from torch.nn.parallel import DataParallel #probably too much overhead, is too slow with even 2 GPUs
 import matplotlib.pyplot as plt
 import os
 

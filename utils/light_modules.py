@@ -7,12 +7,12 @@ from transformers import get_cosine_schedule_with_warmup
 
 from src.models.KWT import KWT
 
-class LightningViT(L.LightningModule):
+class LightningKWT(L.LightningModule):
     def __init__(self,
                  config):
         super().__init__()
         self.criterion =  nn.BCEWithLogitsLoss() # multi label classification
-        self.model = KWT(**config['hparams']['KWT'])
+        self.model = KWT(**config['hparams']['KWT']) 
         self.config = config
         
     def forward(self, specs):
