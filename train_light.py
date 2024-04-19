@@ -92,7 +92,7 @@ def main(args):
                                 entity=config["exp"]["entity"],
                                 config=config["hparams"],
                                 log_model=True,
-                                save_dir='outputs/')
+                                save_dir=config["exp"]["save_dir"])
     else:
         logger = None
     

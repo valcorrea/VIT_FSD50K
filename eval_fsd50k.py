@@ -21,23 +21,25 @@ def get_model(ckpt, config):
     
     model = LightningKWT.load_from_checkpoint(ckpt, config=config)    
     model.to(device)
+    print(device)
     model.eval()
 
     return model, device
 
 def get_data(config):
 
+    # creating transform from NumPy array to Tensor
+    transform = torch.tensor
+
    # test_set = SpectrogramDataset(manifest_path=config['eval_manifest_path'], labels_map=config['labels_map'], audio_config=config['audio_config'])
-    test_set = FSD50kEvalDataset(manifest_path=config['eval_manifest_path'], labels_map=config['labels_map'], audio_config=config['audio_config'])
+    test_set = FSD50kEvalDataset(manifest_path=config['eval_manifest_path'], labels_map=config['labels_map'], audio_config=config['audio_config'], transform=transform)
   
-  #  test_set = FSD50kEvalDataset(args.eval_csv, args.lbl_map,
-   #                              model.hparams.cfg['audio_config'],
-    #                             transform=model.hparams.val_tfs)
-    
+
     # For testing purposes, use a smaller subset of the test set
     #test_set.files = test_set.files[:100]
     #test_set.labels = test_set.labels[:100]
-    #test_set.len = len(test_set.files)
+    #test_set.len = 100
+
 
     classes = {
         "Accelerating_and_revving_and_vroom": 0, "Accordion": 1, "Acoustic_guitar": 2, "Aircraft": 3, "Alarm": 4,
@@ -97,22 +99,20 @@ def test_pipeline(model, test_set, device, classes):
     for ix in tqdm.tqdm(range(test_set.len)):
         with torch.no_grad():
             x, y = test_set[ix]
-            x = x.to(device).unsqueeze(0)
+            x = x.to(device)
             y_pred = model(x)
             y_pred = y_pred.mean(0).unsqueeze(0)
             sigmoid_preds = torch.sigmoid(y_pred)
+
             predicted_labels.append(sigmoid_preds.detach().cpu().numpy()[0])
             true_labels.append(y.detach().cpu().numpy()[0])
 
     predicted_labels = np.asarray(predicted_labels).astype('float32')
     true_labels = np.asarray(true_labels).astype('int32')
-
-    #true_labels_one_hot = np.zeros((len(true_labels), len(classes)), dtype=np.int32)
-   # for i, label in enumerate(true_labels):
-    #    true_labels_one_hot[i, label] = 1
     
-    print("Shape of predicted_labels:", predicted_labels.shape)
-    print("Shape of true_labels:", true_labels.shape)
+    #print("Shape of predicted_labels:", predicted_labels.shape)
+    #print("Shape of true_labels:", true_labels.shape)
+    #print("Shape of true_labels:", true_labels.shape)
 
     stats = calculate_stats(predicted_labels, true_labels)
     mAP = np.mean([stat['AP'] for stat in stats])
@@ -122,18 +122,18 @@ def test_pipeline(model, test_set, device, classes):
     print("dprime: {:.6f}".format(d_prime(mAUC)))
 
     # Plotting mAP
-    plt.figure(figsize=(6, 4))
-    plt.bar(['mAP'], [mAP[0]], color='blue')
-    plt.ylabel('Value')
-    plt.title('Mean Average Precision (mAP)')
-    plt.show()
+   # plt.figure(figsize=(6, 4))
+    #plt.bar(['mAP'], [mAP[0]], color='blue')
+    #plt.ylabel('Value')
+    #plt.title('Mean Average Precision (mAP)')
+    #plt.show()
 
     # Plotting mAUC
-    plt.figure(figsize=(6, 4))
-    plt.bar(['mAUC'], [mAUC[0]], color='orange')
-    plt.ylabel('Value')
-    plt.title('Mean Area Under Curve (mAUC)')
-    plt.show() 
+    #plt.figure(figsize=(6, 4))
+    #plt.bar(['mAUC'], [mAUC[0]], color='orange')
+    #plt.ylabel('Value')
+    #plt.title('Mean Area Under Curve (mAUC)')
+    #plt.show() 
 
 def main(args):
     config = parse_config(args.conf)
