@@ -50,9 +50,9 @@ def get_model(extra_feats, ckpt, config):
 def get_dataloaders(extra_feats, config):
     # Make datasets
 
-    train_set = SpectrogramDataset(manifest_path=config['tr_manifest_path'], labels_map=config['labels_map'], audio_config=config['audio_config'], augment=True)
+    train_set = SpectrogramDataset(manifest_path=config['tr_manifest_path'], labels_map=config['labels_map'], audio_config=config['audio_config'], augment=False)
     val_set = SpectrogramDataset(manifest_path=config['val_manifest_path'], labels_map=config['labels_map'], audio_config=config['audio_config'], augment=False)
-    
+
     # development mode (less files)
     if config['dev_mode']:
         train_set.files = train_set.files[:50]
@@ -98,8 +98,12 @@ def main(args):
     
     model = get_model(args.ckpt_path, args.extra_feats, config)
     train_loader, val_loader = get_dataloaders(args.extra_feats, config)
-    training_pipeline(config, logger, model, train_loader, val_loader)
+    
+    # Print the shape of the first spectrogram in the training set
+    spectrogram, _ = next(iter(train_loader))
+    print("Shape of the first spectrogram in the training set:", spectrogram.shape)
 
+    training_pipeline(config, logger, model, train_loader, val_loader)
 
 if __name__ == '__main__':
     from argparse import ArgumentParser

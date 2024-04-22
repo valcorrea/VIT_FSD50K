@@ -30,10 +30,10 @@ def get_data(config):
 
     # creating transform from NumPy array to Tensor
     transform = torch.tensor
-
+    
    # test_set = SpectrogramDataset(manifest_path=config['eval_manifest_path'], labels_map=config['labels_map'], audio_config=config['audio_config'])
     test_set = FSD50kEvalDataset(manifest_path=config['eval_manifest_path'], labels_map=config['labels_map'], audio_config=config['audio_config'], transform=transform)
-  
+
 
     # For testing purposes, use a smaller subset of the test set
     #test_set.files = test_set.files[:100]

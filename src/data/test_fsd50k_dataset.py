@@ -63,6 +63,7 @@ class FSD50kEvalDataset(Dataset):
 
     def __get_feature__(self, audio: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         real, comp = self.spec_parser(audio)
+        real = real[:,:-1]
         return real, comp
     
     def __get_item_helper__(self, index: int) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:

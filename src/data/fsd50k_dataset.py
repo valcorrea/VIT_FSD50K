@@ -90,6 +90,7 @@ class SpectrogramDataset(Dataset):
 
     def __get_feature__(self, audio: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         real, comp = self.spec_parser(audio)
+        real = real[:,:-1] #reshaping to 96 x 100 instead of 96 x 101
         return real, comp
 
     def get_bg_feature(self, index: int) -> torch.Tensor:
