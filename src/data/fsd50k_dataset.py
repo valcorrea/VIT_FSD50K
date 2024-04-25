@@ -16,6 +16,7 @@ FSD50K Spectrogram Dataset
 class SpectrogramDataset(Dataset):
     def __init__(self, manifest_path: str, labels_map: str,
                  audio_config: dict, mode: Optional[str] = "multilabel",
+                 preload_data: Optional[bool] = False,
                  augment: Optional[bool] = False,
                  labels_delimiter: Optional[str] = ",",
                  mixer = None,
@@ -75,6 +76,16 @@ class SpectrogramDataset(Dataset):
         self.prefetched_labels = None
         if self.mode == "multilabel":
             self.fetch_labels()
+        
+        self.preload_data = preload_data
+        self.data = []
+        # this preloading is rather simplistic
+        # in case of DDP, it will load a full copy of the dataset on each process
+        # so this might blow up CPU memory
+        if self.preload_data:
+            print("preloading data. This can take a while!")
+            for i in tqdm.tqdm(range(self.len)):
+                self.data.append(self.__get_item_helper__(i))
 
     def fetch_labels(self):
         self.prefetched_labels = []
@@ -118,8 +129,11 @@ class SpectrogramDataset(Dataset):
 
     def __getitem__(self, index: int) -> Tuple[torch.Tensor, torch.Tensor]:
         #if self.labels is not None:
-        real, comp, label_tensor = self.__get_item_helper__(index)
-        
+        if self.preload_data and len(self.data) != 0:
+            real, comp, label_tensor = self.data[index]
+        else:
+            real, comp, label_tensor = self.__get_item_helper__(index)
+
         if self.mixer is not None:
             real, final_label = self.mixer(self, real, label_tensor)
             if self.mode != "multiclass":
