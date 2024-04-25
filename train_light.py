@@ -22,12 +22,13 @@ def training_pipeline(config, logger, model, train_loader, val_loader):
     early_stopping = EarlyStopping(monitor="val_loss", mode="min", patience=config['hparams']['early_stopping_patience'], verbose=True)
     callbacks = [model_checkpoint, early_stopping]
 
-    trainer = L.Trainer(max_epochs=config['hparams']['n_epochs'], 
+    trainer = L.Trainer(devices=4, accelerator="gpu", max_epochs=config['hparams']['n_epochs'], 
                         logger=logger,
                         callbacks=callbacks,
                         log_every_n_steps=100,
                         strategy='ddp_find_unused_parameters_true',
                         default_root_dir=config['exp']['save_dir'])
+
     trainer.fit(model, train_loader, val_loader)
 
 def get_model(extra_feats, ckpt, config):
@@ -49,20 +50,21 @@ def get_model(extra_feats, ckpt, config):
 
 def get_dataloaders(extra_feats, config):
     # Make datasets
-    
+
     train_set = SpectrogramDataset(manifest_path=config['tr_manifest_path'], labels_map=config['labels_map'], audio_config=config['audio_config'], augment=False)
     val_set = SpectrogramDataset(manifest_path=config['val_manifest_path'], labels_map=config['labels_map'], audio_config=config['audio_config'], augment=False)
 
     # development mode (less files)
     if config['dev_mode']:
-        train_set.files = train_set.files[:50]
+        print("Running dev_mode!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+        train_set.files = train_set.files[:2000]
         train_set.len = len(train_set.files)
-        val_set.files = val_set.files[:50]
-        val_set.len = len(val_set.files)
-        config['hparams']['batch_size'] = 25
+        #val_set.files = val_set.files[:50]
+        #val_set.len = len(val_set.files)
+        #config['hparams']['batch_size'] = 25
 
-    # Make dataloaders
-    train_loader = DataLoader(train_set, batch_size=config['hparams']['batch_size'], num_workers=5)
+    # Make dataloaders - added shuffle to train_loader
+    train_loader = DataLoader(train_set, batch_size=config['hparams']['batch_size'], shuffle=True, num_workers=5)
     val_loader = DataLoader(val_set, batch_size=config['hparams']['batch_size'], num_workers=5)
     
     return train_loader, val_loader
