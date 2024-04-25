@@ -51,8 +51,16 @@ def get_model(extra_feats, ckpt, config):
 def get_dataloaders(extra_feats, config):
     # Make datasets
 
-    train_set = SpectrogramDataset(manifest_path=config['tr_manifest_path'], labels_map=config['labels_map'], audio_config=config['audio_config'], augment=False)
-    val_set = SpectrogramDataset(manifest_path=config['val_manifest_path'], labels_map=config['labels_map'], audio_config=config['audio_config'], augment=False)
+    train_set = SpectrogramDataset(manifest_path=config['tr_manifest_path'], 
+                                   labels_map=config['labels_map'], 
+                                   audio_config=config['audio_config'], 
+                                   augment=False,
+                                   preload_data=config['preload_data'])
+    val_set = SpectrogramDataset(manifest_path=config['val_manifest_path'], 
+                                 labels_map=config['labels_map'], 
+                                 audio_config=config['audio_config'], 
+                                 augment=False,
+                                 preload_data=config['preload_data'])
 
     # development mode (less files)
     if config['dev_mode']:
@@ -133,6 +141,7 @@ if __name__ == '__main__':
     ap.add_argument('--val_metadata', type=str, help='Path to metadata file')
     ap.add_argument('--ckpt_path', type=str, help='Path to model checkpoint.')
     ap.add_argument('--dev_mode', action='store_true', help='Flag to limit the dataset for testing purposes.')
+    ap.add_argument('--preload_data', action='store_true', help='Flag to load dataset in memory.')
     args = ap.parse_args()
 
     main(args)
