@@ -7,7 +7,10 @@ from transformers import get_cosine_schedule_with_warmup
 
 from src.models.KWT import KWT
 
-class LightningKWT(L.LightningModule):
+class LightningViT(L.LightningModule):
+    
+
+class LightningSweep(L.LightningModule):
     def __init__(self,
                  hparams,
                  arch):
