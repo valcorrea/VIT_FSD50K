@@ -9,7 +9,8 @@ from torchmetrics.classification import AveragePrecision
 from src.models.KWT import KWT
 
 class LightningKWT(L.LightningModule):
-    def __init__(self, config):
+    def __init__(self,
+                 config):
         super().__init__()
         
         self.model = KWT(**config['hparams']['KWT']) 
