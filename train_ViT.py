@@ -123,6 +123,7 @@ if __name__ == '__main__':
     ap = ArgumentParser("Driver code")
     ap.add_argument('--config', type=str, required=True, help='Path to configuration file')
     ap.add_argument('--ckpt_path', type=str, help='Path to model checkpoint.')
+    ap.add_argument('--id', type=str, help='Unique experiment identifier')
     ap.add_argument('--dev_mode', action='store_true', help='Flag to limit the dataset for testing purposes.')
     ap.add_argument('--preload_data', action='store_true', help='Flag to load dataset in memory.')
     args = ap.parse_args()
