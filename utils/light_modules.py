@@ -8,7 +8,13 @@ from transformers import get_cosine_schedule_with_warmup
 from src.models.KWT import KWT
 
 class LightningViT(L.LightningModule):
-    
+    model = VisionTransformer(
+    img_size = (96,100),
+    patch_size = (16,4),
+    in_chans = 1,
+    num_classes = 200 
+)
+
 
 class LightningSweep(L.LightningModule):
     def __init__(self,
