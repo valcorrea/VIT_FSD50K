@@ -8,12 +8,11 @@ from torch import nn
 from transformers import get_cosine_schedule_with_warmup
 import wandb
 from utils.trainer import train, evaluate
-from src.data.dataset import SpectrogramDataset
+from src.data.fsd50k_dataset import SpectrogramDataset
 #from utils.spectrogram_dataset import SpectrogramDataset
 from utils.config_parser import parse_config
 from src.models.KWT import KWT
 from utils.misc import seed_everything, count_params, get_model, calc_step, log
-#from torch.nn.parallel import DataParallel #probably too much overhead, is too slow with even 2 GPUs
 import matplotlib.pyplot as plt
 import os
 
@@ -55,6 +54,7 @@ def training_pipeline(config):
     train_set = SpectrogramDataset(config['tr_manifest_path'], config['labels_map'], config['audio_config'])
     val_set = SpectrogramDataset(config['val_manifest_path'], config['labels_map'], config['audio_config'])
     test_set = SpectrogramDataset(config['eval_manifest_path'],config['labels_map'],config['audio_config'])
+    
 
     if config['dev_mode']:
         train_set.files = train_set.files[:100]
@@ -67,20 +67,22 @@ def training_pipeline(config):
         test_set.labels = test_set.labels[:50]
         test_set.len = len(test_set.files)
         config['hparams']['batch_size'] = 25
+    
 
       # Make dataloaders
     train_loader = DataLoader(train_set, batch_size=config['hparams']['batch_size'], 
-    sampler= train_set.weighted_sampler, num_workers=3)
+    num_workers=3)
     val_loader = DataLoader(val_set, batch_size=config['hparams']['batch_size'],
-    sampler= val_set.weighted_sampler, num_workers=3)
+    num_workers=3)
     test_loader = DataLoader(test_set, batch_size=config['hparams']['batch_size'])
 
-    #classes = ('COVID-19', 'healthy', 'symptomatic')
-    classes = {"COVID-19": 0, "healthy": 1, "symptomatic": 2}
-    
+    #total_batches = len(train_loader)
+    #print("Total number of batches:", total_batches)
+    #exit()
+
     # Cross Entropy loss
-    criterion = nn.CrossEntropyLoss() # multi class 
-    #criterion = nn.BCEWithLogitsLoss() #multi label classification (FDS50K)
+    #criterion = nn.CrossEntropyLoss() # multi class 
+    criterion = nn.BCEWithLogitsLoss() #multi label classification (FDS50K)
 
     # optimizer
     parameters = model.parameters()
@@ -91,7 +93,7 @@ def training_pipeline(config):
     
     #optimizer = get_optimizer(model, config["hparams"]["optimizer"])
     
-    # # Make a scheduler
+    # Make a scheduler
     cosineWarmup = get_cosine_schedule_with_warmup(optimizer, config["hparams"]["scheduler"]["n_warmup"], config["hparams"]["n_epochs"])
     schedulers = {'scheduler': cosineWarmup,
                   'warmup': cosineWarmup}
