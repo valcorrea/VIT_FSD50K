@@ -62,7 +62,6 @@ class SpectrogramDataset(Dataset):
         self.spec_parser = AudioParser(n_fft=self.n_fft, win_length=self.win_len,
                                        hop_length=self.hop_len, feature=feature)
         self.mixer = mixer
-        self.transform = transform
 
         if self.bg_files is not None:
             print("prepping bg_features")
@@ -91,6 +90,7 @@ class SpectrogramDataset(Dataset):
 
     def __get_feature__(self, audio: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         real, comp = self.spec_parser(audio)
+        real = real[:,:-1] #reshaping to 96 x 100 instead of 96 x 101
         return real, comp
 
     def get_bg_feature(self, index: int) -> torch.Tensor:
@@ -100,6 +100,11 @@ class SpectrogramDataset(Dataset):
         if self.transform is not None:
             real = self.transform(real)
         return real
+    
+    def transform(self, spec):
+        spec = torch.from_numpy(spec)
+        spec = spec.expand(1, -1, -1)
+        return spec
 
     def __get_item_helper__(self, index: int) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         f = self.files[index]
@@ -112,14 +117,15 @@ class SpectrogramDataset(Dataset):
         return real, comp, label_tensor
 
     def __getitem__(self, index: int) -> Tuple[torch.Tensor, torch.Tensor]:
+        #if self.labels is not None:
         real, comp, label_tensor = self.__get_item_helper__(index)
+        
         if self.mixer is not None:
             real, final_label = self.mixer(self, real, label_tensor)
             if self.mode != "multiclass":
-
                 return real, final_label
-
-        return real, label_tensor
+        else: 
+            return real, label_tensor
 
     def __parse_labels__(self, lbls: str) -> torch.Tensor:
         if self.mode == "multilabel":
@@ -136,3 +142,5 @@ class SpectrogramDataset(Dataset):
 
     def get_bg_len(self):
         return len(self.bg_files)
+
+  
