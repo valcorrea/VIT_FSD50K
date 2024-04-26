@@ -33,8 +33,8 @@ def main(args):
     else:
         logger = None
     
-    model = get_model(args.ckpt_path, args.extra_feats, config)
-    train_loader, val_loader = get_dataloaders(args.extra_feats, config)
+    model = get_model(args.ckpt_path, config)
+    train_loader, val_loader = get_dataloaders(config)
     
     # Print the shape of the first spectrogram in the training set
     spectrogram, _ = next(iter(train_loader))
