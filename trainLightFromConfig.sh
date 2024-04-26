@@ -1,17 +1,12 @@
 #!/bin/bash
 
-# Source: https://stackoverflow.com/a/44168719
-# Run using the following: bash trainLightFromConfig.sh <Num_GPUs> <Config_Name>
+#SBATCH --output="train_light_100_epochs.log"
+#SBATCH --job-name="100_epoch_fsd50k_train"
+#SBATCH --gres=gpu:4
+#SBATCH --time=1-00:00:00 # walltime
+#SBATCH --nodelist=i256-a10-09
+#SBATCH --ntasks-per-node=4
 
-sbatch <<EOT
-#!/bin/bash
-#SBATCH --output="trainLight_${2}.log"
-#SBATCH --job-name="CoughViT_${2}"
-#SBATCH --gres=gpu:${1}
-#SBATCH --time=16:00:00 # walltime
-# #SBATCH --nodelist=a256-t4-03
-
-echo "The config file used is KWT_configs/${2}.cfg"
-echo "Using ${1} GPUs"
-srun --gres=gpu:${1} singularity exec --nv ~/pytorch-24.01 python train_light.py "KWT_configs/${2}.cfg"
-EOT
+echo "The config file used is small_ViT_train_config.cfg"
+echo "Using 4 GPUs"
+srun singularity exec --nv ~/pytorch=24.01 python train_light.py "/home/student.aau.dk/saales20/local-global-Mul-Head-Attention/VIT_FSD50K/configs/small_ViT_train_config.cfg"
