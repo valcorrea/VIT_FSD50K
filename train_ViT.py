@@ -95,7 +95,7 @@ def training_pipeline(config, logger, model, train_loader, val_loader):
     early_stopping = EarlyStopping(monitor="val_loss", mode="min", patience=config['hparams']['early_stopping_patience'], verbose=True)
     callbacks = [model_checkpoint, early_stopping]
 
-    trainer = L.Trainer(devices=4, accelerator="gpu", max_epochs=config['hparams']['n_epochs'], 
+    trainer = L.Trainer(devices=3, accelerator="gpu", max_epochs=config['hparams']['n_epochs'], 
                         logger=logger,
                         callbacks=callbacks,
                         log_every_n_steps=100,

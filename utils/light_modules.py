@@ -23,6 +23,11 @@ class LightningViT(L.LightningModule):
         self.num_heads = config['hparams']['KWT']['heads']
         self.depth = config['hparams']['KWT']['depth']
         self.cw = config.get('cw', None)
+        self.lr = config['hparams']['optimizer']['lr']
+        self.betas = config['hparams']['optimizer']['betas']
+        self.eps = config['hparams']['optimizer']['eps']
+        self.weight_decay = config['hparams']['optimizer']['weight_decay']
+        self.n_warmup = config['hparams']['scheduler']['n_warmup']
         
         # Initialize model
         self.model = self.get_model()
@@ -78,11 +83,11 @@ class LightningViT(L.LightningModule):
         return val_loss
     
     def configure_optimizers(self):
-        self.optimizer = optim.Adam(self.model.parameters(), lr=self.config["hparams"]["optimizer"]["lr"],
-                           betas=self.config["hparams"]["optimizer"]["betas"],
-                           eps=self.config["hparams"]["optimizer"]["eps"],
-                           weight_decay=self.config["hparams"]["optimizer"]["weight_decay"])
-        scheduler = get_cosine_schedule_with_warmup(self.optimizer, self.config["hparams"]["scheduler"]["n_warmup"], self.config["hparams"]["n_epochs"])
+        self.optimizer = optim.Adam(self.model.parameters(), lr=self.lr,
+                           betas=self.betas,
+                           eps=self.eps,
+                           weight_decay=self.weight_decay)
+        scheduler = get_cosine_schedule_with_warmup(self.optimizer, self.n_warmup, self.n_epochs)
         return [self.optimizer], [{"scheduler": scheduler, "interval": "epoch"}]
 
 
