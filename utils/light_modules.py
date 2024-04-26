@@ -39,8 +39,9 @@ class LightningViT(L.LightningModule):
             print("!!!!!!!!!!! loading class weights !!!!!!!!")
             self.cw = torch.load(self.cw, map_location="cpu")
             print("self.cw shape:", self.cw.shape)
-        self.criterion =  nn.BCEWithLogitsLoss(pos_weight=self.cw)
-
+        criterion =  nn.BCEWithLogitsLoss(pos_weight=self.cw)
+        return criterion
+    
     def get_model(self):
         model = VisionTransformer(img_size=self.img_size,
                                   patch_size = self.patch_size,
