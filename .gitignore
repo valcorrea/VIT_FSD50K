@@ -84,6 +84,7 @@ ipython_config.py
 
 dataset/
 outputs/
+model_checkpoints/
 
 
 # pyenv
