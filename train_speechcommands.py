@@ -32,7 +32,7 @@ def training_pipeline(config, logger, model, train_loader, val_loader):
 
     trainer.fit(model, train_loader, val_loader)
 
-def get_model(extra_feats, ckpt, config):
+def get_model(extra_feats, ckpt, config, useFNet=False):
 
     # Set device
     device = (
@@ -44,6 +44,8 @@ def get_model(extra_feats, ckpt, config):
     if ckpt:
         print('Loading from checkpoint')
         model = LightningKWT.load_from_checkpoint(ckpt, config=config)
+    elif useFNet:
+        model = LightningKWT(config, True)
     else:
         model = LightningKWT(config)
     model.to(device)
@@ -127,7 +129,7 @@ def main(args):
     else:
         logger = None
     
-    model = get_model(args.ckpt_path, args.extra_feats, config)
+    model = get_model(args.extra_feats, args.ckpt_path, config, args.useFNet)
     train_loader, val_loader = get_dataloaders(args.extra_feats, config)
     
     # Print the shape of the first spectrogram in the training set
@@ -163,6 +165,7 @@ if __name__ == '__main__':
     ap.add_argument('--ckpt_path', type=str, help='Path to model checkpoint.')
     ap.add_argument('--dev_mode', action='store_true', help='Flag to limit the dataset for testing purposes.')
     ap.add_argument('--preload_data', action='store_true', help='Flag to load dataset in memory.')
+    ap.add_argument("--useFNet", type=bool, default=False)
     args = ap.parse_args()
 
     main(args)

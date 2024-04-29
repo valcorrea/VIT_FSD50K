@@ -1,25 +1,32 @@
 """Script for training KWT model"""
+
 from argparse import ArgumentParser
+
+import lightning as L
+import torch
+import wandb
+from lightning.pytorch.callbacks import EarlyStopping, ModelCheckpoint
+from lightning.pytorch.loggers import WandbLogger
+from src.data.fsd50k_dataset import SpectrogramDataset
+from src.models.KWT import KWT
+from torch import nn
 from torch.optim.lr_scheduler import LRScheduler
 from torch.utils.data import DataLoader
-import torch
-from torch import nn
-import wandb
-from src.data.fsd50k_dataset import SpectrogramDataset
-from utils.config_parser import parse_config
-from src.models.KWT import KWT
-from utils.misc import get_model
-import lightning as L
-from lightning.pytorch.loggers import WandbLogger
-from lightning.pytorch.callbacks import ModelCheckpoint, EarlyStopping
 from utils.config_parser import parse_config
 from utils.light_modules import LightningKWT
+from utils.misc import get_model
+
 
 def training_pipeline(config, logger, model, train_loader, val_loader):
-    
+
     # Create callbacks
     model_checkpoint = ModelCheckpoint(monitor="val_loss", mode="min", verbose=True)
-    early_stopping = EarlyStopping(monitor="val_loss", mode="min", patience=config['hparams']['early_stopping_patience'], verbose=True)
+    early_stopping = EarlyStopping(
+        monitor="val_loss",
+        mode="min",
+        patience=config["hparams"]["early_stopping_patience"],
+        verbose=True,
+    )
     callbacks = [model_checkpoint, early_stopping]
 
     trainer = L.Trainer(devices=4, accelerator="gpu", max_epochs=config['hparams']['n_epochs'], 
@@ -31,7 +38,8 @@ def training_pipeline(config, logger, model, train_loader, val_loader):
 
     trainer.fit(model, train_loader, val_loader)
 
-def get_model(extra_feats, ckpt, config):
+
+def get_model(extra_feats, ckpt, config, useFNet=False):
 
     # Set device
     device = (
@@ -41,12 +49,15 @@ def get_model(extra_feats, ckpt, config):
     )
 
     if ckpt:
-        print('Loading from checkpoint')
+        print("Loading from checkpoint")
         model = LightningKWT.load_from_checkpoint(ckpt, config=config)
+    elif useFNet:
+        model = LightningKWT(config, True)
     else:
         model = LightningKWT(config)
     model.to(device)
     return model
+
 
 def get_dataloaders(extra_feats, config):
     # Make datasets
@@ -82,13 +93,13 @@ def main(args):
 
     config = parse_config(args.config)
     if args.tr_manifest_path:
-        config['tr_manifest_path'] = args.tr_manifest_path
+        config["tr_manifest_path"] = args.tr_manifest_path
     if args.val_manifest_path:
-        config['val_manifest_path'] = args.val_manifest_path
+        config["val_manifest_path"] = args.val_manifest_path
     if args.labels_map:
-        config['labels_map'] = args.labels_map
+        config["labels_map"] = args.labels_map
     if args.tr_metadata:
-        config['tr_metadata'] = args.tr_metadata
+        config["tr_metadata"] = args.tr_metadata
     if args.val_metadata:
         config['val_metadata'] = args.val_metadata
     config['dev_mode'] = args.dev_mode
@@ -100,7 +111,7 @@ def main(args):
 
     if args.id:
         config["exp"]["exp_name"] = config["exp"]["exp_name"] + args.id
-    
+
     if config["exp"]["wandb"]:
         wandb.login()
         logger = WandbLogger(project=config["exp"]["proj_name"],
@@ -111,8 +122,8 @@ def main(args):
                                 save_dir=config["exp"]["save_dir"])
     else:
         logger = None
-    
-    model = get_model(args.ckpt_path, args.extra_feats, config)
+
+    model = get_model(args.extra_feats, args.ckpt_path, config, args.useFNet)
     train_loader, val_loader = get_dataloaders(args.extra_feats, config)
     
     # Print the shape of the first spectrogram in the training set
@@ -121,7 +132,7 @@ def main(args):
 
     training_pipeline(config, logger, model, train_loader, val_loader)
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     from argparse import ArgumentParser
 
     if not torch.backends.mps.is_available():
@@ -135,7 +146,7 @@ if __name__ == '__main__':
                 "MPS not available because the current MacOS version is not 12.3+ "
                 "and/or you do not have an MPS-enabled device on this machine."
             )
-            
+
     ap = ArgumentParser("Driver code")
     ap.add_argument('--extra_feats', type=str, help='extra features')
     ap.add_argument('--config', type=str, required=True, help='Path to configuration file')
@@ -148,6 +159,7 @@ if __name__ == '__main__':
     ap.add_argument('--ckpt_path', type=str, help='Path to model checkpoint.')
     ap.add_argument('--dev_mode', action='store_true', help='Flag to limit the dataset for testing purposes.')
     ap.add_argument('--preload_data', action='store_true', help='Flag to load dataset in memory.')
+    ap.add_argument("--useFNet", type=bool, default=False)
     args = ap.parse_args()
 
     main(args)
