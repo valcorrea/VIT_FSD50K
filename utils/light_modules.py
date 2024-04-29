@@ -15,7 +15,7 @@ class LightningKWT(L.LightningModule):
         
         self.model = KWT(**config['hparams']['KWT']) 
         self.config = config
-        if self.config["cw"] is not None:
+        if self.config.get('cw', None) is not None:
             print("!!!!!!!!!!! loading class weights !!!!!!!!")
             self.cw = torch.load(self.config["cw"], map_location="cpu")
             print("self.cw shape:", self.cw.shape)
