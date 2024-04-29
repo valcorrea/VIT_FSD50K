@@ -94,6 +94,10 @@ def main(args):
     config['dev_mode'] = args.dev_mode
     config['preload_data'] = args.preload_data
     
+    # Make config backward compatible
+    if config.get("mode", None) is None:
+        config["mode"] = "multilabel"
+
     if args.id:
         config["exp"]["exp_name"] = config["exp"]["exp_name"] + args.id
     

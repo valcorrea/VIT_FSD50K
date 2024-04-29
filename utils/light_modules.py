@@ -4,7 +4,7 @@ import torch
 from torch import nn, optim
 import lightning as L
 from transformers import get_cosine_schedule_with_warmup
-from torchmetrics.classification import AveragePrecision
+from torchmetrics.classification import AveragePrecision, MulticlassAccuracy
 
 from src.models.KWT import KWT
 
@@ -15,15 +15,20 @@ class LightningKWT(L.LightningModule):
         
         self.model = KWT(**config['hparams']['KWT']) 
         self.config = config
-        self.train_precision = AveragePrecision(task="multilabel", num_labels=200) #logging average precision
-        self.val_precision = AveragePrecision(task="multilabel", num_labels=200) #logging average precision
         if self.config["cw"] is not None:
             print("!!!!!!!!!!! loading class weights !!!!!!!!")
             self.cw = torch.load(self.config["cw"], map_location="cpu")
             print("self.cw shape:", self.cw.shape)
         else:
             self.cw = None
-        self.criterion =  nn.BCEWithLogitsLoss(pos_weight=self.cw) # multi label classification
+        if self.config["mode"] == "multilabel":
+            self.train_precision = AveragePrecision(task="multilabel", num_labels=200) #logging average precision
+            self.val_precision = AveragePrecision(task="multilabel", num_labels=200) #logging average precision
+            self.criterion =  nn.BCEWithLogitsLoss(pos_weight=self.cw) # multi label classification
+        else:
+            self.train_precision = MulticlassAccuracy(num_classes=200) #logging multiclass accuracy
+            self.val_precision = MulticlassAccuracy(num_classes=200) #logging multiclass accuracy
+            self.critereon = nn.CrossEntropyLoss()
         
     def forward(self, specs):
         return self.model(specs)
@@ -33,8 +38,11 @@ class LightningKWT(L.LightningModule):
         outputs = self(specs)
         loss = self.criterion(outputs, targets)
         #correct = outputs.argmax(1).eq(targets.argmax(1)).sum().float()
-        y_pred_sigmoid = torch.sigmoid(outputs) #predictions
-        self.train_precision(y_pred_sigmoid,targets.long())
+        if self.config["mode"] == "multilabel":
+            y_pred_sigmoid = torch.sigmoid(outputs) #predictions
+            self.train_precision(y_pred_sigmoid,targets.long())
+        else:
+            self.train_precision(outputs,targets)
         #auc = torch.tensor(AveragePrecision(targets.detach().cpu().numpy(),
         #                                           y_pred_sigmoid.detach().cpu().numpy(), average="macro"))
         self.log("train_mAP", self.train_precision, prog_bar=True, on_epoch=True, synch_dist=True)
@@ -49,8 +57,11 @@ class LightningKWT(L.LightningModule):
         specs, targets = batch
         outputs = self(specs)
         val_loss = self.criterion(outputs, targets)
-        y_pred_sigmoid = torch.sigmoid(outputs)
-        self.val_precision(y_pred_sigmoid,targets.long())
+        if self.config["mode"] == "multilabel":
+            y_pred_sigmoid = torch.sigmoid(outputs)
+            self.val_precision(y_pred_sigmoid,targets.long())
+        else:
+            self.train_precision(outputs, targets)
         #correct = outputs.argmax(1).eq(targets.argmax(1)).sum().float()
         #accuracy = correct / targets.shape[0]
         self.log("val_mAP",self.val_precision, prog_bar=True, on_epoch=True, synch_dist=True)
