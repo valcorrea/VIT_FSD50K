@@ -48,7 +48,6 @@ class LogMelSpec(nn.Module):
         if self.flip_ft:
             x = x.transpose(-2, -1)
             # print("in LogMelSpec, x.shape after flip_ft", x.shape)
-        x = x.unsqueeze(1)
         # print("in LogMelSpec, x.shape after normalization", x.shape)
         return x
 

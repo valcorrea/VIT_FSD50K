@@ -28,7 +28,7 @@ class LightningKWT(L.LightningModule):
         else:
             self.train_precision = MulticlassAccuracy(num_classes=200) #logging multiclass accuracy
             self.val_precision = MulticlassAccuracy(num_classes=200) #logging multiclass accuracy
-            self.critereon = nn.CrossEntropyLoss()
+            self.criterion = nn.CrossEntropyLoss()
         
     def forward(self, specs):
         return self.model(specs)
@@ -41,12 +41,13 @@ class LightningKWT(L.LightningModule):
         if self.config["mode"] == "multilabel":
             y_pred_sigmoid = torch.sigmoid(outputs) #predictions
             self.train_precision(y_pred_sigmoid,targets.long())
+            self.log("train_mAP", self.train_precision, prog_bar=True, on_epoch=True, sync_dist=True)
         else:
             self.train_precision(outputs,targets)
+            self.log("train_acc", self.train_precision, prog_bar=True, on_epoch=True, sync_dist=True)
         #auc = torch.tensor(AveragePrecision(targets.detach().cpu().numpy(),
         #                                           y_pred_sigmoid.detach().cpu().numpy(), average="macro"))
-        self.log("train_mAP", self.train_precision, prog_bar=True, on_epoch=True, synch_dist=True)
-
+    
         self.log_dict({"train_loss": loss, "lr": self.optimizer.param_groups[0]["lr"]}, on_epoch=True, on_step=True, sync_dist=True)
                             #"tr_correct_predictions": correct}, on_epoch=True, on_step=True, sync_dist=True)
         
@@ -60,15 +61,13 @@ class LightningKWT(L.LightningModule):
         if self.config["mode"] == "multilabel":
             y_pred_sigmoid = torch.sigmoid(outputs)
             self.val_precision(y_pred_sigmoid,targets.long())
+            self.log("val_mAP",self.val_precision, prog_bar=True, on_epoch=True, sync_dist=True)
         else:
-            self.train_precision(outputs, targets)
+            self.val_precision(outputs, targets)
+            self.log("val_acc",self.val_precision, prog_bar=True, on_epoch=True, sync_dist=True)
         #correct = outputs.argmax(1).eq(targets.argmax(1)).sum().float()
         #accuracy = correct / targets.shape[0]
-        self.log("val_mAP",self.val_precision, prog_bar=True, on_epoch=True, synch_dist=True)
-
         self.log_dict({"val_loss": val_loss}, on_epoch=True, on_step=True, sync_dist=True)
-    
-
         return val_loss
 
     def configure_optimizers(self):
