@@ -66,6 +66,7 @@ def calculate_stats(output, target, class_indices=None):
             target[:, k], output[:, k], average=None)
 
         # AUC
+
         auc = metrics.roc_auc_score(target[:, k], output[:, k], average=None)
 
         # Precisions, recalls
