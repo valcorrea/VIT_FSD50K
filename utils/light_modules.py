@@ -79,8 +79,8 @@ class LightningKWT(L.LightningModule):
                            betas=self.config["hparams"]["optimizer"]["betas"],
                            eps=self.config["hparams"]["optimizer"]["eps"],
                            weight_decay=self.config["hparams"]["optimizer"]["weight_decay"])
-        #scheduler = get_cosine_schedule_with_warmup(self.optimizer, self.config["hparams"]["scheduler"]["n_warmup"], self.config["hparams"]["n_epochs"])
-        return [self.optimizer]#, [{"scheduler": scheduler, "interval": "epoch"}]
+        scheduler = get_cosine_schedule_with_warmup(self.optimizer, self.config["hparams"]["scheduler"]["n_warmup"], self.config["hparams"]["n_epochs"])
+        return [self.optimizer], [{"scheduler": scheduler, "interval": "epoch"}]
  
     
 class LightningSweep(L.LightningModule):
