@@ -149,7 +149,7 @@ def test_pipeline_2(model, test_set, device, classes):
 def main(args):
     config = parse_config(args.conf)
     model, device = get_model(args.ckpt, config)
-    test_set,test_loader = get_data(config)
+    test_loader= get_data(config)
     
      # Print the shape of the first spectrogram in the training set
     spectrogram, _ = next(iter(test_loader))
@@ -162,10 +162,10 @@ def main(args):
     if config["exp"]["wandb"]:
         wandb.login()
         with wandb.init(project=config["exp"]["proj_name"], name=config["exp"]["exp_name"], config=config["hparams"],entity=config["exp"]["entity"]):
-            test_pipeline(model, test_set, device, test_loader)
+            test_pipeline(model, test_loader, device)
 
     else:
-        test_pipeline(model, test_set, device,test_loader)
+        test_pipeline(model, test_loader, device)
     
 if __name__ == "__main__":
     parser = ArgumentParser("Driver code.")
@@ -176,4 +176,4 @@ if __name__ == "__main__":
 
     main(args)
 
-
+# --conf configs/small_ViT_train_config_speech_commands_vcb.cfg --ckpt model.ckpt
