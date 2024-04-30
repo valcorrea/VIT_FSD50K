@@ -38,6 +38,7 @@ def main(args):
 
 def train(config=None, model_config=None, ckpt=None):
     with wandb.init(config=config):
+        log_model_config(model_config)
         sweep_config = wandb.config
         train_loader, val_loader = get_dataloaders(sweep_config, model_config)
         model = get_model(ckpt, sweep_config, model_config)
@@ -54,6 +55,12 @@ def train(config=None, model_config=None, ckpt=None):
                             default_root_dir=model_config['exp']['save_dir'])
         trainer.fit(model, train_loader, val_loader)
 
+
+def log_model_config(config):
+    wandb.log(config['audio_config'])
+    wandb.log(config['hparams'])
+
+    
 def get_dataloaders(sweep_config, model_config):
 
     features = LogMelSpec(
