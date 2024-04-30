@@ -1,19 +1,22 @@
-from typing import Any
 import math
-import torch
-from torch import nn, optim
+from typing import Any
+
 import lightning as L
+import torch
+from src.models.KWT import KWT, KWTFNet
+from torch import nn, optim
 from transformers import get_cosine_schedule_with_warmup
 from torchmetrics.classification import AveragePrecision, MulticlassAccuracy
 
-from src.models.KWT import KWT
 
 class LightningKWT(L.LightningModule):
-    def __init__(self,
-                 config):
+    def __init__(self, config, useFnet=False):
         super().__init__()
-        
-        self.model = KWT(**config['hparams']['KWT']) 
+        self.model = (
+            KWT(**config["hparams"]["KWT"])
+            if not useFnet
+            else KWTFNet(**config["hparams"]["KWTFNet"])
+        )
         self.config = config
         self.num_classes= self.config['hparams']['KWT']['num_classes']
         if self.config.get('cw', None) is not None:
@@ -33,7 +36,7 @@ class LightningKWT(L.LightningModule):
         
     def forward(self, specs):
         return self.model(specs)
-    
+
     def training_step(self, batch, batch_idx):
         specs, targets = batch
         outputs = self(specs)
@@ -54,8 +57,8 @@ class LightningKWT(L.LightningModule):
         
         
         return loss
-    
-    def validation_step(self, batch, batch_idx):    
+
+    def validation_step(self, batch, batch_idx):
         specs, targets = batch
         outputs = self(specs)
         val_loss = self.criterion(outputs, targets)
