@@ -75,7 +75,7 @@ class LightningKWT(L.LightningModule):
         return val_loss
 
     def configure_optimizers(self):
-        self.optimizer = optim.Adam(self.model.parameters(), lr=self.config["hparams"]["optimizer"]["lr"],
+        self.optimizer = optim.AdamW(self.model.parameters(), lr=self.config["hparams"]["optimizer"]["lr"],
                            betas=self.config["hparams"]["optimizer"]["betas"],
                            eps=self.config["hparams"]["optimizer"]["eps"],
                            weight_decay=self.config["hparams"]["optimizer"]["weight_decay"])
