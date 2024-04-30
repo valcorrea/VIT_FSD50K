@@ -95,6 +95,7 @@ class LightningSweep(L.LightningModule):
         self.n_warmup = hparams['n_warmup']
         self.n_epochs = hparams['n_epochs']
         self.weight_decay = hparams['weight_decay']
+        self.num_classes = 35
 
         self.train_precision = MulticlassAccuracy(num_classes=self.num_classes) #logging multiclass accuracy
         self.val_precision = MulticlassAccuracy(num_classes=self.num_classes) #logging multiclass accuracy
