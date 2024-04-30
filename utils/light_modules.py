@@ -88,7 +88,6 @@ class LightningSweep(L.LightningModule):
                  hparams,
                  arch):
         super().__init__()
-        self.criterion =  nn.BCEWithLogitsLoss() # multi label classification
         self.model = KWT(**arch)
         self.optimizer = hparams['optimizer']
         self.scheduler = hparams['scheduler']
@@ -96,6 +95,10 @@ class LightningSweep(L.LightningModule):
         self.n_warmup = hparams['n_warmup']
         self.n_epochs = hparams['n_epochs']
         self.weight_decay = hparams['weight_decay']
+
+        self.train_precision = MulticlassAccuracy(num_classes=self.num_classes) #logging multiclass accuracy
+        self.val_precision = MulticlassAccuracy(num_classes=self.num_classes) #logging multiclass accuracy
+        self.criterion = nn.CrossEntropyLoss()
 
         
     def forward(self, specs):
@@ -105,6 +108,8 @@ class LightningSweep(L.LightningModule):
         specs, targets = batch
         outputs = self(specs)
         loss = self.criterion(outputs, targets)
+        acc = self.train_precision(outputs,targets)
+        self.log("train_acc", acc, prog_bar=True, on_epoch=True, sync_dist=True)    
         self.log_dict({"train_loss": loss, "lr": self.optimizer.param_groups[0]["lr"]}, on_epoch=True, on_step=True, sync_dist=True)
         return loss
     
@@ -112,6 +117,8 @@ class LightningSweep(L.LightningModule):
         specs, targets = batch
         outputs = self(specs)
         loss = self.criterion(outputs, targets)
+        acc = self.train_precision(outputs, targets)
+        self.log("val_acc", acc, prog_bar=True, on_epoch=True, sync_dist=True)
         self.log_dict({"val_loss": loss}, on_epoch=True, on_step=True, sync_dist=True)
         return loss
 
