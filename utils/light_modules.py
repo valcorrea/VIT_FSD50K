@@ -95,6 +95,7 @@ class LightningSweep(L.LightningModule):
         self.learning_rate = hparams['learning_rate']
         self.n_warmup = hparams['n_warmup']
         self.n_epochs = hparams['n_epochs']
+        self.weight_decay = hparams['weight_decay']
 
         
     def forward(self, specs):
@@ -116,7 +117,9 @@ class LightningSweep(L.LightningModule):
 
     def configure_optimizers(self):
         if self.optimizer == 'adam':
-            self.optimizer = optim.Adam(self.model.parameters(), lr=self.learning_rate)
+            self.optimizer = optim.Adam(self.model.parameters(), 
+                                        lr=self.learning_rate, 
+                                        weight_decay=self.weight_decay)
         elif self.optimizer == 'sgd':
             self.optimizer = optim.SGD(self.model.parameters(), lr=self.learning_rate)
         

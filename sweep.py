@@ -24,9 +24,10 @@ import lightning as L
 from lightning.pytorch.callbacks import ModelCheckpoint, EarlyStopping
 from lightning.pytorch.loggers import WandbLogger
 
-from utils.light_modules import LightningKWT
+from utils.light_modules import LightningSweep
 from utils.config_parser import parse_config
-from src.data.fsd50k_dataset import SpectrogramDataset
+from src.data.speechcommands_dataset import SpeechCommands
+from src.data.features import LogMelSpec
 
 def main(args):
     config = parse_config(args.config)
@@ -54,9 +55,22 @@ def train(config=None, model_config=None, ckpt=None):
         trainer.fit(model, train_loader, val_loader)
 
 def get_dataloaders(sweep_config, model_config):
+
+    features = LogMelSpec(
+        sr=model_config['audio_config']['sample_rate'],
+        n_mels=model_config['audio_config']['n_mels'],
+        num_frames=model_config['audio_config'].get('num_frames', 100)
+    )
+
     # Make datasets
-    train_set = SpectrogramDataset(manifest_path=model_config['tr_manifest_path'], labels_map=model_config['labels_map'], audio_config=model_config['audio_config'])
-    val_set = SpectrogramDataset(manifest_path=model_config['val_manifest_path'], labels_map=model_config['labels_map'], audio_config=model_config['audio_config'])
+    train_set = SpeechCommands(root=model_config['dataset_root'], 
+                               audio_config=model_config['audio_config'], 
+                               labels_map=model_config['labels_map'], 
+                               subset='training', features=features)
+    val_set = SpeechCommands(root=model_config['dataset_root'], 
+                             audio_config=model_config['audio_config'], 
+                             labels_map=model_config['labels_map'], 
+                             subset='validation', features=features)
     
     if model_config['dev_mode']:
         train_set.files = train_set.files[:50]
@@ -80,9 +94,9 @@ def get_model(ckpt, sweep_config, model_config):
         
     if ckpt:
         print('Loading from checkpoint')
-        model = LightningKWT.load_from_checkpoint(ckpt, hparams=sweep_config, arch=model_config['hparams']['KWT'])
+        model = LightningSweep.load_from_checkpoint(ckpt, hparams=sweep_config, arch=model_config['hparams']['KWT'])
     else:
-        model = LightningKWT(hparams=sweep_config, arch=model_config['hparams']['KWT'])
+        model = LightningSweep(hparams=sweep_config, arch=model_config['hparams']['KWT'])
     model.to(device)
     return model
 
