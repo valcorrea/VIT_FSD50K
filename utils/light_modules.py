@@ -15,6 +15,7 @@ class LightningKWT(L.LightningModule):
         
         self.model = KWT(**config['hparams']['KWT']) 
         self.config = config
+        self.num_classes= self.config['hparams']['KWT']['num_classes']
         if self.config.get('cw', None) is not None:
             print("!!!!!!!!!!! loading class weights !!!!!!!!")
             self.cw = torch.load(self.config["cw"], map_location="cpu")
@@ -22,12 +23,12 @@ class LightningKWT(L.LightningModule):
         else:
             self.cw = None
         if self.config["mode"] == "multilabel":
-            self.train_precision = AveragePrecision(task="multilabel", num_labels=200) #logging average precision
-            self.val_precision = AveragePrecision(task="multilabel", num_labels=200) #logging average precision
+            self.train_precision = AveragePrecision(task="multilabel", num_labels=self.num_classes) #logging average precision
+            self.val_precision = AveragePrecision(task="multilabel", num_labels=self.num_classes) #logging average precision
             self.criterion =  nn.BCEWithLogitsLoss(pos_weight=self.cw) # multi label classification
         else:
-            self.train_precision = MulticlassAccuracy(num_classes=200) #logging multiclass accuracy
-            self.val_precision = MulticlassAccuracy(num_classes=200) #logging multiclass accuracy
+            self.train_precision = MulticlassAccuracy(num_classes=self.num_classes) #logging multiclass accuracy
+            self.val_precision = MulticlassAccuracy(num_classes=self.num_classes) #logging multiclass accuracy
             self.criterion = nn.CrossEntropyLoss()
         
     def forward(self, specs):
