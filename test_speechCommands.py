@@ -66,85 +66,31 @@ def get_data(config):
     classes = {"backward": 0, "bed": 1, "bird": 2, "cat": 3, "dog": 4, "down": 5, "eight": 6, "five": 7, "follow": 8, "forward": 9, "four": 10, "go": 11, "happy": 12, "house": 13, "learn": 14, "left": 15, "marvin": 16, "nine": 17, "no": 18, "off": 19, "on": 20, "one": 21, "right": 22, "seven": 23, "sheila": 24, "six": 25, "stop": 26, "three": 27, "tree": 28, "two": 29, "up": 30, "visual": 31, "wow": 32, "yes": 33, "zero": 34}
     return val_loader
 
-def test_pipeline(model,testing_loader,device):
-    # model.eval()
-    correct_predictions = 0
-    total_samples = len(testing_loader.dataset)
-    print(f"Total_samples {total_samples}")
-    print(f"Num_batches {len(testing_loader)}")
-    
-    trainer = L.Trainer()
+def get_predictions(device, model, test_loader):
+    predicted_labels = torch.tensor([]).to(device)
+    true_labels = torch.tensor([]).to(device)
 
-    trainer.fit(model, testing_loader)
-    trainer.test()
-    
-    # for ix in tqdm.tqdm(range(testing_loader.len)):
-    #     with torch.no_grad():
-    #         x, y = testing_loader[ix]
-    #         x = x.to(device)
-    #         y_pred = model(x)
-            
-    # with torch.no_grad():
-    #     for batch in testing_loader:
-    #         inputs, labels = batch
-    #         inputs, labels = inputs.to(device), labels.to(device)
-    #         print(f"Inputs shape:{inputs.shape}")
-    #         # Forward pass
-    #         outputs = model(inputs)
+    for specs, labels in tqdm(test_loader):
+        specs = specs.to(device)  #sending spectograms to device
+        labels = labels.to(device) # sending labels to device
+        output = model(specs)  # feeding data to network
+        predicted_labels = torch.cat((predicted_labels, output.argmax(1))) #argmax to find "hot one" in one hot encoding
+        true_labels = torch.cat((true_labels, labels.argmax(1))) #argmax to find "hot one" in one hot encoding
+        
+    predicted_labels = torch.flatten(predicted_labels).cpu() #flattening dimensions
+    true_labels = torch.flatten(true_labels).cpu() #flattening dimensions
+    return predicted_labels, true_labels
 
-    #         # Get predicted labels
-    #         _, predicted = torch.max(outputs, 1)
-
-    #         # Count correct predictions
-    #         correct_predictions += (predicted == labels).sum().item()
-
-    # # Calculate accuracy
-    # accuracy = correct_predictions / total_samples * 100
-    # print(f"Testing Accuracy: {accuracy:.2f}%")
-    
-def test_pipeline_2(model, test_set, device, classes):
+ 
+def test_pipeline(model, test_loader, device, classes):
     print("Initiating testing...")
+    model.eval()
+    predicted_labels, true_labels = get_predictions(device, model, test_loader)
 
-    predicted_labels, true_labels = [], []
-
-    for ix in tqdm.tqdm(range(test_set.len)):
-        with torch.no_grad():
-            x, y = test_set[ix]
-            x = x.to(device)
-            y_pred = model(x)
-            y_pred = y_pred.mean(0).unsqueeze(0)
-            sigmoid_preds = torch.sigmoid(y_pred)
-
-            predicted_labels.append(sigmoid_preds.detach().cpu().numpy()[0])
-            true_labels.append(y.detach().cpu().numpy()[0])
-
-    predicted_labels = np.asarray(predicted_labels).astype('float32')
-    true_labels = np.asarray(true_labels).astype('int32')
     
-    #print("Shape of predicted_labels:", predicted_labels.shape)
-    #print("Shape of true_labels:", true_labels.shape)
-    #print("Shape of true_labels:", true_labels.shape)
-
-    stats = calculate_stats(predicted_labels, true_labels)
-    mAP = np.mean([stat['AP'] for stat in stats])
-    mAUC = np.mean([stat['auc'] for stat in stats])
-    print("mAP: {:.6f}".format(mAP))
-    print("mAUC: {:.6f}".format(mAUC))
-    print("dprime: {:.6f}".format(d_prime(mAUC)))
-
-    # Plotting mAP
-   # plt.figure(figsize=(6, 4))
-    #plt.bar(['mAP'], [mAP[0]], color='blue')
-    #plt.ylabel('Value')
-    #plt.title('Mean Average Precision (mAP)')
-    #plt.show()
-
-    # Plotting mAUC
-    #plt.figure(figsize=(6, 4))
-    #plt.bar(['mAUC'], [mAUC[0]], color='orange')
-    #plt.ylabel('Value')
-    #plt.title('Mean Area Under Curve (mAUC)')
-    #plt.show() 
+    print("Shape of predicted_labels:", predicted_labels.shape)
+    print("Shape of true_labels:", true_labels.shape)
+    
 
 def main(args):
     config = parse_config(args.conf)
