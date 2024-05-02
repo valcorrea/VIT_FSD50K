@@ -60,10 +60,15 @@ class LightningKWT(L.LightningModule):
 
         return val_loss
 
+    #def configure_optimizers(self):
+     #   self.optimizer = optim.Adam(self.model.parameters(), lr=self.config["hparams"]["optimizer"]["lr"],
+      #                     betas=self.config["hparams"]["optimizer"]["betas"],
+       #                    eps=self.config["hparams"]["optimizer"]["eps"],
+        #                   weight_decay=self.config["hparams"]["optimizer"]["weight_decay"])
+        #scheduler = get_cosine_schedule_with_warmup(self.optimizer, self.config["hparams"]["scheduler"]["n_warmup"], self.config["hparams"]["n_epochs"])
+        #return [self.optimizer]#, [{"scheduler": scheduler, "interval": "epoch"}]
+    
     def configure_optimizers(self):
-        self.optimizer = optim.Adam(self.model.parameters(), lr=self.config["hparams"]["optimizer"]["lr"],
-                           betas=self.config["hparams"]["optimizer"]["betas"],
-                           eps=self.config["hparams"]["optimizer"]["eps"],
-                           weight_decay=self.config["hparams"]["optimizer"]["weight_decay"])
+        self.optimizer = optim.SGD(self.model.parameters(), lr=self.config["hparams"]["optimizer"]["lr"])
         #scheduler = get_cosine_schedule_with_warmup(self.optimizer, self.config["hparams"]["scheduler"]["n_warmup"], self.config["hparams"]["n_epochs"])
         return [self.optimizer]#, [{"scheduler": scheduler, "interval": "epoch"}]

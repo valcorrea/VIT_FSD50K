@@ -1,4 +1,34 @@
-# coding=utf-8
+import numpy as np
+import numba as nb
+import librosa
+
+@nb.jit(nopython=True, cache=True)
+def time_shift(wav: np.ndarray, sr: int, s_min: float, s_max: float) -> np.ndarray:
+    """Time shift augmentation.
+    Refer to https://www.kaggle.com/haqishen/augmentation-methods-for-audio#1.-Time-shifting.
+    Changed np.r_ to np.hstack for numba support.
+
+    Args:
+        wav (np.ndarray): Waveform array of shape (n_samples,).
+        sr (int): Sampling rate.
+        s_min (float): Minimum fraction of a second by which to shift.
+        s_max (float): Maximum fraction of a second by which to shift.
+    
+    Returns:
+        wav_time_shift (np.ndarray): Time-shifted waveform array.
+    """
+
+    start = int(np.random.uniform(sr * s_min, sr * s_max))
+    if start >= 0:
+        wav_time_shift = np.hstack((wav[start:], np.random.uniform(-0.001, 0.001, start)))
+    else:
+        wav_time_shift = np.hstack((np.random.uniform(-0.001, 0.001, -start), wav[:start]))
+    
+    return wav_time_shift
+
+
+#
+#  coding=utf-8
 # Copyright 2021 The Google Research Authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,6 +42,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+
 
 """Spectrogram augmentation for model regularization."""
 from kws_streaming.layers.compat import tf

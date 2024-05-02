@@ -103,7 +103,8 @@ def main(args):
                                 name=config["exp"]["exp_name"],
                                 entity=config["exp"]["entity"],
                                 config=config["hparams"],
-                                log_model=True,
+                                #log_model=True,
+                                log_model='all', #to log ALL the model checkpoints to wandb
                                 save_dir=config["exp"]["save_dir"])
     else:
         logger = None
