@@ -1,14 +1,10 @@
 """Script for training KWT model"""
 from argparse import ArgumentParser
-from torch.optim.lr_scheduler import LRScheduler
 from torch.utils.data import DataLoader
 import torch
-from torch import nn
 import wandb
 from src.data.speechcommands_dataset import SpeechCommands
-from src.data.features import LogMelSpec
 from utils.config_parser import parse_config
-from src.models.KWT import KWT
 from utils.misc import get_model
 import lightning as L
 from lightning.pytorch.loggers import WandbLogger
@@ -54,33 +50,14 @@ def get_model(extra_feats, ckpt, config, useFNet=False):
 def get_dataloaders(extra_feats, config):
     # Make datasets
 
-    # train_set = SpectrogramDataset(manifest_path=config['tr_manifest_path'], 
-    #                                labels_map=config['labels_map'], 
-    #                                audio_config=config['audio_config'], 
-    #                                augment=False,
-    #                                preload_data=config['preload_data'])
-    # val_set = SpectrogramDataset(manifest_path=config['val_manifest_path'], 
-    #                              labels_map=config['labels_map'], 
-    #                              audio_config=config['audio_config'], 
-    #                              augment=False,
-    #                              preload_data=config['preload_data'])
-
-    features = LogMelSpec(
-        sr=config['audio_config']['sample_rate'],
-        n_mels=config['audio_config']['n_mels'],
-        num_frames=config['audio_config'].get('num_frames', 100)
-    )
-
-    
-
     train_set = SpeechCommands(root=config['dataset_root'], 
                                audio_config=config['audio_config'], 
                                labels_map=config['labels_map'], 
-                               subset='training', features=features)
+                               subset='training')
     val_set = SpeechCommands(root=config['dataset_root'], 
                              audio_config=config['audio_config'], 
                              labels_map=config['labels_map'], 
-                             subset='validation', features=features)
+                             subset='validation')
     
     # development mode (less files)
     # if config['dev_mode']:
@@ -132,6 +109,7 @@ def main(args):
     else:
         logger = None
     
+    torch.manual_seed(42)
     model = get_model(args.extra_feats, args.ckpt_path, config, args.useFNet)
     train_loader, val_loader = get_dataloaders(args.extra_feats, config)
     
