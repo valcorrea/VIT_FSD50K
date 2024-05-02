@@ -15,6 +15,7 @@ from lightning.pytorch.loggers import WandbLogger
 from lightning.pytorch.callbacks import ModelCheckpoint, EarlyStopping
 from utils.config_parser import parse_config
 from utils.light_modules import LightningKWT
+from lightning.pytorch.profilers import AdvancedProfiler, PyTorchProfiler
     
 def training_pipeline(config, logger, model, train_loader, val_loader):
     
@@ -23,12 +24,16 @@ def training_pipeline(config, logger, model, train_loader, val_loader):
     early_stopping = EarlyStopping(monitor="val_loss", mode="min", patience=config['hparams']['early_stopping_patience'], verbose=True)
     callbacks = [model_checkpoint, early_stopping]
 
+    #profiler = AdvancedProfiler(".", "FNet_Perf_KWT")
+    profiler = PyTorchProfiler(".", "FNet_Perf_KWT2")
+
     trainer = L.Trainer(devices=1, accelerator="gpu", max_epochs=config['hparams']['n_epochs'], 
                         logger=logger,
                         callbacks=callbacks,
                         log_every_n_steps=100,
                         strategy='ddp_find_unused_parameters_true',
-                        default_root_dir=config['exp']['save_dir'])
+                        default_root_dir=config['exp']['save_dir'],
+                        profiler=profiler,)
 
     trainer.fit(model, train_loader, val_loader)
 

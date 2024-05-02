@@ -1,8 +1,9 @@
 #!/bin/bash
-#SBATCH --output="train_3_speech_vcb.log"
-#SBATCH --job-name="SpeechCommands_vcb_3"
-#SBATCH --gres=gpu:4
+#SBATCH --output="train_FNet_Speech_Commands.log"
+#SBATCH --job-name="SpeechCommands_FNet"
+#SBATCH --gres=gpu:1
 #SBATCH --time=16:00:00 # walltime
-#SBATCH --nodelist=i256-a10-08
+#SBATCH --ntasks-per-node=1
+#SBATCH --nodelist=i256-a10-07
 
-srun --gres=gpu:4 --ntasks-per-node=4 singularity exec --nv ~/pytorch-24.01 python train_speechcommands.py --config configs/small_ViT_train_config_speech_commands_vcb.cfg
+srun singularity exec --nv ~/pytorch-24.03 python train_speechcommands.py --config configs/FNet_train_config_mdalal.cfg --useFNet True
