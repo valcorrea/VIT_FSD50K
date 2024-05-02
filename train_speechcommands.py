@@ -70,6 +70,9 @@ def get_dataloaders(extra_feats, config):
         n_mels=config['audio_config']['n_mels'],
         num_frames=config['audio_config'].get('num_frames', 100)
     )
+
+    
+
     train_set = SpeechCommands(root=config['dataset_root'], 
                                audio_config=config['audio_config'], 
                                labels_map=config['labels_map'], 

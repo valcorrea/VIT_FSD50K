@@ -26,114 +26,69 @@ def time_shift(wav: np.ndarray, sr: int, s_min: float, s_max: float) -> np.ndarr
     
     return wav_time_shift
 
+def resample(x: np.ndarray, sr: int, r_min: float, r_max: float) -> np.ndarray:
+    """Resamples waveform.
 
-#
-#  coding=utf-8
-# Copyright 2021 The Google Research Authors.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+    Args:
+        x (np.ndarray): Input waveform, array of shape (n_samples, ).
+        sr (int): Sampling rate.
+        r_min (float): Minimum percentage of resampling.
+        r_max (float): Maximum percentage of resampling.
+    """
 
+    sr_new = sr * np.random.uniform(r_min, r_max)
+    x = librosa.resample(x, sr, sr_new)
+    return x, sr_new
+  
 
+@nb.jit(nopython=True, cache=True)
+def spec_augment(mel_spec: np.ndarray, n_time_masks: int, time_mask_width: int, n_freq_masks: int, freq_mask_width: int):
+    """Numpy implementation of spectral augmentation.
 
-"""Spectrogram augmentation for model regularization."""
-from kws_streaming.layers.compat import tf
-from tensorflow.python.keras.utils import control_flow_util  # pylint: disable=g-direct-tensorflow-import
-from tensorflow.python.ops import array_ops  # pylint: disable=g-direct-tensorflow-import
+    Args:
+        mel_spec (np.ndarray): Mel spectrogram, array of shape (n_mels, T).
+        n_time_masks (int): Number of time bands.   
+        time_mask_width (int): Max width of each time band.
+        n_freq_masks (int): Number of frequency bands.
+        freq_mask_width (int): Max width of each frequency band.
 
+    Returns:
+        mel_spec (np.ndarray): Spectrogram with random time bands and freq bands masked out.
+    """
+    
+    offset, begin = 0, 0
 
-def spectrogram_masking(spectrogram, dim=1, masks_number=2, mask_max_size=5):
-  """Spectrogram masking on frequency or time dimension.
+    for _ in range(n_time_masks):
+        offset = np.random.randint(0, time_mask_width)
+        begin = np.random.randint(0, mel_spec.shape[1] - offset)
+        mel_spec[:, begin: begin + offset] = 0.0
+    
+    for _ in range(n_freq_masks):
+        offset = np.random.randint(0, freq_mask_width)
+        begin = np.random.randint(0, mel_spec.shape[0] - offset)
+        mel_spec[begin: begin + offset, :] = 0.0
 
-  Args:
-    spectrogram: Input spectrum [batch, time, frequency]
-    dim: dimension on which masking will be applied: 1 - time; 2 - frequency
-    masks_number: number of masks
-    mask_max_size: mask max size
-  Returns:
-    masked spectrogram
-  """
-  if dim not in (1, 2):
-    raise ValueError('Wrong dim value: %d' % dim)
-  input_shape = spectrogram.shape
-  time_size, frequency_size = input_shape[1:3]
-  dim_size = input_shape[dim]  # size of dimension on which mask is applied
-  stripe_shape = [1, time_size, frequency_size]
-  for _ in range(masks_number):
-    mask_end = tf.random.uniform([], 0, mask_max_size, tf.int32)
-    mask_start = tf.random.uniform([], 0, dim_size - mask_end, tf.int32)
-
-    # initialize stripes with stripe_shape
-    stripe_ones_left = list(stripe_shape)
-    stripe_zeros_center = list(stripe_shape)
-    stripe_ones_right = list(stripe_shape)
-
-    # update stripes dim
-    stripe_ones_left[dim] = dim_size - mask_start - mask_end
-    stripe_zeros_center[dim] = mask_end
-    stripe_ones_right[dim] = mask_start
-
-    # generate mask
-    mask = tf.concat((
-        tf.ones(stripe_ones_left, spectrogram.dtype),
-        tf.zeros(stripe_zeros_center, spectrogram.dtype),
-        tf.ones(stripe_ones_right, spectrogram.dtype),
-    ), dim)
-    spectrogram = spectrogram * mask
-  return spectrogram
+    return mel_spec
 
 
-class SpecAugment(tf.keras.layers.Layer):
-  """Spectrogram augmentation.
 
-  It is based on paper: SpecAugment: A Simple Data Augmentation Method
-  for Automatic Speech Recognition https://arxiv.org/pdf/1904.08779.pdf
-  """
+########### Parameters for time shift according to KWT paper ###################
+s_min = -0.1  # Minimum time shift in seconds (-100 ms)
+s_max = 0.1   # Maximum time shift in seconds (100 ms)
+sr = 16000 # Sample rate, 16.0 kHz
 
-  def __init__(self,
-               time_masks_number=2,
-               time_mask_max_size=10,
-               frequency_masks_number=2,
-               frequency_mask_max_size=5,
-               **kwargs):
-    super(SpecAugment, self).__init__(**kwargs)
-    self.time_mask_max_size = time_mask_max_size
-    self.time_masks_number = time_masks_number
-    self.frequency_mask_max_size = frequency_mask_max_size
-    self.frequency_masks_number = frequency_masks_number
+########### Parameters for resampling according to KWT paper ###################
+r_min = 0.85
+r_max = 1.15
 
-  def call(self, inputs, training=None):
-    if training is None:
-      training = tf.keras.backend.learning_phase()
 
-    def masked_inputs():
-      # in time dim
-      net = spectrogram_masking(inputs, 1, self.time_masks_number,
-                                self.time_mask_max_size)
-      # in frequency dim
-      net = spectrogram_masking(net, 2, self.frequency_masks_number,
-                                self.frequency_mask_max_size)
-      return net
+########### Parameters for SpecAugmentation according to KWT paper ###################
+n_time_masks = 2
+time_mask_width = 25
+n_freq_masks = 5
+freq_mask_width = 7
 
-    outputs = control_flow_util.smart_cond(training, masked_inputs,
-                                           lambda: array_ops.identity(inputs))
-    return outputs
+#resampled_wav, new_sr = resample(wav, sr, r_min, r_max)
+#shifted_wav = time_shift(wav, sr, s_min, s_max)
+#spec_augment = spec_augment(mel_spec, n_time_masks, time_mask_width, n_freq_masks, freq_mask_width)
 
-  def get_config(self):
-    config = {
-        'frequency_masks_number': self.frequency_masks_number,
-        'frequency_mask_max_size': self.frequency_mask_max_size,
-        'time_masks_number': self.time_masks_number,
-        'time_mask_max_size': self.time_mask_max_size,
-    }
-    base_config = super(SpecAugment, self).get_config()
-    return dict(list(base_config.items()) + list(config.items()))
