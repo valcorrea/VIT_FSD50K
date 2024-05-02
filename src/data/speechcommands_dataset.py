@@ -4,7 +4,8 @@ import torch
 from torch.utils.data import Dataset
 from typing import Tuple, Optional, Callable
 from torchaudio.datasets import SPEECHCOMMANDS
-
+import torchaudio
+import numpy as np
 
 class SpeechCommands(SPEECHCOMMANDS):
     def __init__(self, 
@@ -14,18 +15,34 @@ class SpeechCommands(SPEECHCOMMANDS):
                  subset: str,
                  features: Callable = None,
                  download: bool = True,
-                 duration: float = 1.0
+                 duration: float = 1.0,
+                 r_min=0.85,
+                 r_max=1.15,
                  ) -> None:
         super().__init__(root, "speech_commands_v0.02", "SpeechCommands", download, subset)
         with open(labels_map, 'r') as fd:
                 self.labels_map = json.load(fd)
         self.features = features
         self.duration = duration
+        self.r_max = r_max
+        self.r_min = r_min
+
+    def resample(self, x, sr):
+
+        r_min = self.r_min
+        r_max = self.r_max
+        sr_new = int(sr * np.random.uniform(r_min, r_max))
+        x_resampled = torchaudio.transforms.Resample(sr, sr_new)(x)
+        return x_resampled
 
     def __getitem__(self, n: int):
         items =  super().__getitem__(n)
         audio = items[0]
         sr = items[1]
+        
+        #resampling audio sample
+        audio = self.resample(audio, sr)
+
         # SpeechCommands has a fixed duration of 1.
         min_samples = int(sr * self.duration)
         if audio.shape[1] < min_samples:
@@ -39,3 +56,5 @@ class SpeechCommands(SPEECHCOMMANDS):
             audio = self.features(audio)
 
         return audio, label
+    
+    

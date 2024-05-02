@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#SBATCH --output="train_light_100_epochs.log"
+#SBATCH --output="SGD_train_light_100_epochs.log"
 #SBATCH --job-name="100_epoch_fsd50k_train"
 #SBATCH --gres=gpu:4
 #SBATCH --time=1-00:00:00 # walltime

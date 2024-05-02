@@ -74,6 +74,14 @@ class LightningKWT(L.LightningModule):
         self.log_dict({"val_loss": val_loss}, on_epoch=True, on_step=True, sync_dist=True)
         return val_loss
 
+    #def configure_optimizers(self):
+     #   self.optimizer = optim.Adam(self.model.parameters(), lr=self.config["hparams"]["optimizer"]["lr"],
+      #                     betas=self.config["hparams"]["optimizer"]["betas"],
+       #                    eps=self.config["hparams"]["optimizer"]["eps"],
+        #                   weight_decay=self.config["hparams"]["optimizer"]["weight_decay"])
+        #scheduler = get_cosine_schedule_with_warmup(self.optimizer, self.config["hparams"]["scheduler"]["n_warmup"], self.config["hparams"]["n_epochs"])
+        #return [self.optimizer]#, [{"scheduler": scheduler, "interval": "epoch"}]
+    
     def configure_optimizers(self):
         self.optimizer = optim.AdamW(self.model.parameters(), lr=self.config["hparams"]["optimizer"]["lr"],
                            betas=self.config["hparams"]["optimizer"]["betas"],
