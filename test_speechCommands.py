@@ -1,5 +1,5 @@
 import os
-import tqdm
+from tqdm import tqdm
 import numpy as np
 import torch
 from utils.metrics_helper import calculate_stats, d_prime
@@ -48,23 +48,12 @@ def get_data(config):
                              labels_map=config['labels_map'], 
                              subset='testing', features=features)
     
-    val_loader = DataLoader(eval_set, batch_size=config['hparams']['batch_size'], num_workers=5)
+    eval_loader = DataLoader(eval_set, batch_size=config['hparams']['batch_size'], num_workers=5)
     
-#     # creating transform from NumPy array to Tensor
-#     transform = torch.tensor
-    
-#    # test_set = SpectrogramDataset(manifest_path=config['eval_manifest_path'], labels_map=config['labels_map'], audio_config=config['audio_config'])
-#     test_set = FSD50kEvalDataset(manifest_path=config['eval_manifest_path'], labels_map=config['labels_map'], audio_config=config['audio_config'], transform=transform)
+    print("test loader size:",len(eval_loader))
 
-
-    # For testing purposes, use a smaller subset of the test set
-    #test_set.files = test_set.files[:100]
-    #test_set.labels = test_set.labels[:100]
-    #test_set.len = 100
-    
-    
     classes = {"backward": 0, "bed": 1, "bird": 2, "cat": 3, "dog": 4, "down": 5, "eight": 6, "five": 7, "follow": 8, "forward": 9, "four": 10, "go": 11, "happy": 12, "house": 13, "learn": 14, "left": 15, "marvin": 16, "nine": 17, "no": 18, "off": 19, "on": 20, "one": 21, "right": 22, "seven": 23, "sheila": 24, "six": 25, "stop": 26, "three": 27, "tree": 28, "two": 29, "up": 30, "visual": 31, "wow": 32, "yes": 33, "zero": 34}
-    return val_loader
+    return eval_loader
 
 def get_predictions(device, model, test_loader):
     predicted_labels = torch.tensor([]).to(device)
@@ -74,24 +63,27 @@ def get_predictions(device, model, test_loader):
         specs = specs.to(device)  #sending spectograms to device
         labels = labels.to(device) # sending labels to device
         output = model(specs)  # feeding data to network
+        
         predicted_labels = torch.cat((predicted_labels, output.argmax(1))) #argmax to find "hot one" in one hot encoding
-        true_labels = torch.cat((true_labels, labels.argmax(1))) #argmax to find "hot one" in one hot encoding
+        true_labels = torch.cat((true_labels, labels)) 
         
     predicted_labels = torch.flatten(predicted_labels).cpu() #flattening dimensions
     true_labels = torch.flatten(true_labels).cpu() #flattening dimensions
     return predicted_labels, true_labels
 
  
-def test_pipeline(model, test_loader, device, classes):
-    print("Initiating testing...")
+def test_pipeline(model, test_loader, device):
     model.eval()
+    print("Initiating testing...")
     predicted_labels, true_labels = get_predictions(device, model, test_loader)
 
-    
+    # Calculate accuracy
+    accuracy = torch.sum(predicted_labels == true_labels).item() / len(true_labels)
+
+    print("Accuracy:", accuracy)
     print("Shape of predicted_labels:", predicted_labels.shape)
     print("Shape of true_labels:", true_labels.shape)
     
-
 def main(args):
     config = parse_config(args.conf)
     model, device = get_model(args.ckpt, config)
