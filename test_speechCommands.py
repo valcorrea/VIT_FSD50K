@@ -6,7 +6,6 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 import torch
-import wandb
 from matplotlib import pyplot as plt
 from sklearn.metrics import (
     confusion_matrix,
@@ -17,6 +16,7 @@ from sklearn.metrics import (
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
+import wandb
 from src.data.features import LogMelSpec
 from src.data.fsd50k_dataset import SpectrogramDataset
 from src.data.speechcommands_dataset import SpeechCommands
@@ -147,12 +147,12 @@ def test_pipeline(model, test_loader, device, classes):
         index=[i for i in classes],
         columns=[i for i in classes],
     )
-    confusion_matrix_fig = plt.figure(figsize=(12, 7))
+    # confusion_matrix_fig = plt.figure(figsize=(12, 7))
     plt.title("Confusion Matrix")
     sns.heatmap(df_cm, annot=True)
     plt.xlabel("Predicted labels")
     plt.ylabel("True labels")
-    plt.savefig("confusion_matrix.png")
+    # plt.savefig("confusion_matrix.png")
     plt.show()
 
 
@@ -202,4 +202,4 @@ if __name__ == "__main__":
 
     main(args)
 
-# --conf configs/small_ViT_train_config_speech_commands_vcb.cfg --ckpt model.ckpt
+# --conf configs/small_ViT_TEST_config_speech_commands_vcb.cfg --ckpt model.ckpt
