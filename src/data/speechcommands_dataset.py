@@ -26,7 +26,7 @@ class SpeechCommands(SPEECHCOMMANDS):
                  num_frames=100,
                  n_time_masks=2,
                  time_mask_width=25,
-                 n_freq_masks=5,
+                 n_freq_masks=2,
                  freq_mask_width=7,
                  seed=42
                  ) -> None:
@@ -137,8 +137,8 @@ class SpeechCommands(SPEECHCOMMANDS):
         if random.random() < self.bg_prob:
             audio = self.add_background(audio)
 
-        #resampling audio sample
-        audio = self.resample(audio)
+        # #resampling audio sample
+        # audio = self.resample(audio)
 
         # SpeechCommands has a fixed duration of 1.
         min_samples = int(sr * self.duration)

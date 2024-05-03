@@ -74,7 +74,6 @@ def get_dataloaders(extra_feats, config):
     
     return train_loader, val_loader
 
-
 def main(args):
 
     config = parse_config(args.config)
@@ -110,13 +109,11 @@ def main(args):
         logger = None
     
     torch.manual_seed(42)
+    print('Getting the model')
     model = get_model(args.extra_feats, args.ckpt_path, config, args.useFNet)
+    print('Getting the dataloaders')
     train_loader, val_loader = get_dataloaders(args.extra_feats, config)
-    
-    # Print the shape of the first spectrogram in the training set
-    spectrogram, _ = next(iter(train_loader))
-    print("Shape of the first spectrogram in the training set:", spectrogram.shape)
-
+    print('Starting training')
     training_pipeline(config, logger, model, train_loader, val_loader)
 
 if __name__ == '__main__':
