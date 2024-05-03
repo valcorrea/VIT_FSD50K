@@ -85,23 +85,23 @@ class LogMelSpec(nn.Module):
         n_freq_masks = self.n_freq_masks
         freq_mask_width = self.freq_mask_width
 
-        print("Original mel_spec shape:", mel_spec.shape)
+       # print("Original mel_spec shape:", mel_spec.shape)
 
         mel_spec_copy = mel_spec.clone()  # Make a copy of the input mel_spec
 
         for _ in range(n_time_masks):
             offset = np.random.randint(0, time_mask_width)
             begin = np.random.randint(0, mel_spec_copy.shape[2] - offset)
-            print("Time mask:", begin, begin + offset)
+            #print("Time mask:", begin, begin + offset)
             mel_spec_copy[:, :, begin: begin + offset] = 0.0
         
         for _ in range(n_freq_masks):
             offset = np.random.randint(0, freq_mask_width)
             begin = np.random.randint(0, mel_spec_copy.shape[1] - offset)
-            print("Freq mask:", begin, begin + offset)
+            #print("Freq mask:", begin, begin + offset)
             mel_spec_copy[:, begin: begin + offset, :] = 0.0
 
-        print("Final mel_spec shape:", mel_spec_copy.shape)
+        #print("Final mel_spec shape:", mel_spec_copy.shape)
 
         return mel_spec_copy
 

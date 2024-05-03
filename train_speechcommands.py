@@ -66,13 +66,12 @@ def get_dataloaders(extra_feats, config):
     #                              preload_data=config['preload_data'])
 
     features = LogMelSpec(
-        sr=config['audio_config']['sample_rate'],
+        sr=config['audio_config']['sample_rate'], s_min=-0.1, s_max=0.1, n_time_masks=2, time_mask_width=25, n_freq_masks=5, freq_mask_width=7, 
         n_mels=config['audio_config']['n_mels'],
         num_frames=config['audio_config'].get('num_frames', 100)
     )
 
     
-
     train_set = SpeechCommands(root=config['dataset_root'], 
                                audio_config=config['audio_config'], 
                                labels_map=config['labels_map'], 
