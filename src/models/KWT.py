@@ -9,6 +9,7 @@ from transformers.models.fnet.modeling_fnet import (
     FNetConfig,
     FNetEncoder,
     FNetFourierTransform,
+    FNetBasicFourierTransform,
 )
 
 # Basically vision transformer, ViT that accepts MFCC + SpecAug. Refer to:

@@ -84,6 +84,7 @@ ipython_config.py
 
 dataset/
 outputs/
+outputsFNet/
 model_checkpoints/
 
 
@@ -172,3 +173,4 @@ lightning_logs/
 temp/
 
 data_set
+fit-*
