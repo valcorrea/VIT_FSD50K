@@ -53,7 +53,7 @@ class PostNorm(nn.Module):
         :param fn: torch module
         """
         super().__init__()
-        self.norm = nn.LayerNorm(dim, eps=1e-12)
+        self.norm = nn.LayerNorm(dim)
         self.fn = fn
 
     def forward(self, x, **kwargs):
@@ -184,7 +184,8 @@ class FnetEncoderCustom(nn.Module):
             self.layers.append(
                 nn.ModuleList(
                     [
-                        P_Norm(hidden_size, FNetBasicFourierTransform(self.config)),
+                        #P_Norm(hidden_size, FNetBasicFourierTransform(self.config)),
+                        FNetFourierTransform(self.config),
                         P_Norm(
                             hidden_size,
                             FeedForward(
