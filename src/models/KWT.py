@@ -208,7 +208,7 @@ class FnetEncoderCustom(nn.Module):
         attentions = []
 
         for attn, ff in self.layers:
-            x = attn(x)[0] + x
+            x = attn(x)[0]
             attentions.append(x)
             x = ff(x) + x
             hidden_states.append(x)
