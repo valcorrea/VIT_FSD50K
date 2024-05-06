@@ -63,7 +63,7 @@ class PostNorm(nn.Module):
         :param kwargs: Keyword arguments
         :return: PostNorm output
         """
-        return self.norm(self.fn(x, **kwargs))
+        return self.norm(self.fn(x, **kwargs) + x)
 
 
 class FeedForward(nn.Module):
@@ -184,8 +184,8 @@ class FnetEncoderCustom(nn.Module):
             self.layers.append(
                 nn.ModuleList(
                     [
-                        #P_Norm(hidden_size, FNetBasicFourierTransform(self.config)),
-                        FNetFourierTransform(self.config),
+                        P_Norm(hidden_size, FNetBasicFourierTransform(self.config)),
+                        #FNetFourierTransform(self.config),
                         P_Norm(
                             hidden_size,
                             FeedForward(
@@ -197,6 +197,7 @@ class FnetEncoderCustom(nn.Module):
                     ]
                 )
             )
+        self.P_Norm = P_Norm
 
     def forward(self, x):
         """
@@ -206,12 +207,18 @@ class FnetEncoderCustom(nn.Module):
         """
         hidden_states = []
         attentions = []
-
-        for attn, ff in self.layers:
-            x = attn(x)[0]
-            attentions.append(x)
-            x = ff(x) + x
-            hidden_states.append(x)
+        if isinstance(self.P_Norm, PreNorm):
+            for attn, ff in self.layers:
+                x = attn(x)[0] + x
+                attentions.append(x)
+                x = ff(x) + x
+                hidden_states.append(x)
+        else:
+            for attn, ff in self.layers:
+                x = attn(x)[0]
+                attentions.append(x)
+                x = ff(x)
+                hidden_states.append(x)
         return x, hidden_states, attentions
 
 
