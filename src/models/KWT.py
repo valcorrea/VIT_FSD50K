@@ -250,6 +250,7 @@ class Transformer(nn.Module):
                     ]
                 )
             )
+        self.P_Norm = P_Norm
 
     def forward(self, x):
         """
@@ -261,13 +262,13 @@ class Transformer(nn.Module):
         attentions = []
         if isinstance(self.P_Norm, PreNorm):
             for attn, ff in self.layers:
-                x = attn(x)[0] + x
+                x = attn(x) + x
                 attentions.append(x)
                 x = ff(x) + x
                 hidden_states.append(x)
         else:
             for attn, ff in self.layers:
-                x = attn(x)[0]
+                x = attn(x)
                 attentions.append(x)
                 x = ff(x)
                 hidden_states.append(x)
