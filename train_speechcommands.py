@@ -1,16 +1,16 @@
 """Script for training KWT model"""
 from argparse import ArgumentParser
-from torch.utils.data import DataLoader
 import torch
 import wandb
-from src.data.speechcommands_dataset import SpeechCommands
-from utils.config_parser import parse_config
-from utils.misc import get_model
+
+from torch.utils.data import DataLoader
 import lightning as L
 from lightning.pytorch.loggers import WandbLogger
 from lightning.pytorch.callbacks import ModelCheckpoint, EarlyStopping
+
 from utils.config_parser import parse_config
 from utils.light_modules import LightningKWT
+from src.data.speechcommands_dataset import SpeechCommands
     
 def training_pipeline(config, logger, model, train_loader, val_loader):
     
