@@ -165,8 +165,8 @@ class SpeechCommands(SPEECHCOMMANDS):
         label_str = items[2]
         label = self.labels_map[label_str]
 
-        # Applying time shifting
-        audio = self.time_shift(audio)
+        # # Applying time shifting
+        # audio = self.time_shift(audio)
 
         # Computing log mel spectrogram
         audio = self.melspec(audio)

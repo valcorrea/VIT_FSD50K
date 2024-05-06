@@ -19,7 +19,7 @@ def training_pipeline(config, logger, model, train_loader, val_loader):
     early_stopping = EarlyStopping(monitor="val_loss", mode="min", patience=config['hparams']['early_stopping_patience'], verbose=True)
     callbacks = [model_checkpoint, early_stopping]
 
-    trainer = L.Trainer(devices=4, accelerator="gpu", max_epochs=config['hparams']['n_epochs'], 
+    trainer = L.Trainer(devices=1, accelerator="gpu", max_epochs=config['hparams']['n_epochs'], 
                         logger=logger,
                         callbacks=callbacks,
                         log_every_n_steps=50,
@@ -28,7 +28,8 @@ def training_pipeline(config, logger, model, train_loader, val_loader):
 
     trainer.fit(model, train_loader, val_loader)
 
-def get_model(extra_feats, ckpt, config, useFNet=False):
+
+def get_model(ckpt, config, useFNet=False):
 
     # Set device
     device = (
@@ -47,7 +48,8 @@ def get_model(extra_feats, ckpt, config, useFNet=False):
     model.to(device)
     return model
 
-def get_dataloaders(extra_feats, config):
+
+def get_dataloaders(config):
     # Make datasets
 
     train_set = SpeechCommands(root=config['dataset_root'], 
@@ -58,15 +60,6 @@ def get_dataloaders(extra_feats, config):
                              audio_config=config['audio_config'], 
                              labels_map=config['labels_map'], 
                              subset='validation')
-    
-    # development mode (less files)
-    # if config['dev_mode']:
-    #     print("Running dev_mode!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-    #     train_set.files = train_set.files[:2000]
-    #     train_set.len = len(train_set.files)
-    #     #val_set.files = val_set.files[:50]
-    #     #val_set.len = len(val_set.files)
-    #     #config['hparams']['batch_size'] = 25
 
     # Make dataloaders - added shuffle to train_loader
     train_loader = DataLoader(train_set, batch_size=config['hparams']['batch_size'], shuffle=True, num_workers=5)
@@ -74,26 +67,16 @@ def get_dataloaders(extra_feats, config):
     
     return train_loader, val_loader
 
+
 def main(args):
 
     config = parse_config(args.config)
-    if args.tr_manifest_path:
-        config['tr_manifest_path'] = args.tr_manifest_path
-    if args.val_manifest_path:
-        config['val_manifest_path'] = args.val_manifest_path
+    if args.dataset_root:
+        config['dataset_root'] = args.dataset_root
     if args.labels_map:
         config['labels_map'] = args.labels_map
-    if args.tr_metadata:
-        config['tr_metadata'] = args.tr_metadata
-    if args.val_metadata:
-        config['val_metadata'] = args.val_metadata
-    config['dev_mode'] = args.dev_mode
-    config['preload_data'] = args.preload_data
     
     # Make config backward compatible
-    if config.get("mode", None) is None:
-        config["mode"] = "multilabel"
-
     if args.id:
         config["exp"]["exp_name"] = config["exp"]["exp_name"] + args.id
     
@@ -109,12 +92,10 @@ def main(args):
         logger = None
     
     torch.manual_seed(42)
-    print('Getting the model')
-    model = get_model(args.extra_feats, args.ckpt_path, config, args.useFNet)
-    print('Getting the dataloaders')
-    train_loader, val_loader = get_dataloaders(args.extra_feats, config)
-    print('Starting training')
+    model = get_model(args.ckpt_path, config, args.useFNet)
+    train_loader, val_loader = get_dataloaders(config)
     training_pipeline(config, logger, model, train_loader, val_loader)
+
 
 if __name__ == '__main__':
     from argparse import ArgumentParser
@@ -132,17 +113,11 @@ if __name__ == '__main__':
             )
             
     ap = ArgumentParser("Driver code")
-    ap.add_argument('--extra_feats', type=str, help='extra features')
     ap.add_argument('--config', type=str, required=True, help='Path to configuration file')
+    ap.add_argument('--dataset_root', type=str, help='Dataset root directory')
     ap.add_argument('--id', type=str, help='Unique experiment identifier')
-    ap.add_argument('--tr_manifest_path', type=str, help='Path to the unlabeled train data manifest.')
-    ap.add_argument('--val_manifest_path', type=str, help='Path to the unlabeled val data manifest.')
     ap.add_argument('--labels_map', type=str, help='Path to lbl_map.json')
-    ap.add_argument('--tr_metadata', type=str, help='Path to metadata file')
-    ap.add_argument('--val_metadata', type=str, help='Path to metadata file')
     ap.add_argument('--ckpt_path', type=str, help='Path to model checkpoint.')
-    ap.add_argument('--dev_mode', action='store_true', help='Flag to limit the dataset for testing purposes.')
-    ap.add_argument('--preload_data', action='store_true', help='Flag to load dataset in memory.')
     ap.add_argument("--useFNet", type=bool, default=False)
     args = ap.parse_args()
 
