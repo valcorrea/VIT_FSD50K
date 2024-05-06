@@ -62,7 +62,7 @@ class PostNorm(nn.Module):
         :param kwargs: Keyword arguments
         :return: PostNorm output
         """
-        return self.norm(self.fn(x, **kwargs))
+        return self.norm(self.fn(x, **kwargs) + x)
 
 
 class FeedForward(nn.Module):
@@ -259,11 +259,18 @@ class Transformer(nn.Module):
         """
         hidden_states = []
         attentions = []
-        for attn, ff in self.layers:
-            x = attn(x) + x
-            attentions.append(x)
-            x = ff(x) + x
-            hidden_states.append(x)
+        if isinstance(self.P_Norm, PreNorm):
+            for attn, ff in self.layers:
+                x = attn(x)[0] + x
+                attentions.append(x)
+                x = ff(x) + x
+                hidden_states.append(x)
+        else:
+            for attn, ff in self.layers:
+                x = attn(x)[0]
+                attentions.append(x)
+                x = ff(x)
+                hidden_states.append(x)
         return x, hidden_states, attentions
 
 
