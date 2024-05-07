@@ -48,17 +48,12 @@ def get_model(ckpt, config, useFNet=False):
 
 
 def get_data(config):
-    features = LogMelSpec(
-        sr=config["audio_config"]["sample_rate"],
-        n_mels=config["audio_config"]["n_mels"],
-        num_frames=config["audio_config"].get("num_frames", 100),
-    )
     eval_set = SpeechCommands(
         root=config["dataset_root"],
         audio_config=config["audio_config"],
         labels_map=config["labels_map"],
         subset="testing",
-        features=features,
+        augment=False
     )
 
     eval_loader = DataLoader(
