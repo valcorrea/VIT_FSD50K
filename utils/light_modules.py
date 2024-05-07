@@ -73,15 +73,28 @@ class LightningKWT(L.LightningModule):
         #accuracy = correct / targets.shape[0]
         self.log_dict({"val_loss": val_loss}, on_epoch=True, on_step=True, sync_dist=True)
         return val_loss
-
-    #def configure_optimizers(self):
-     #   self.optimizer = optim.Adam(self.model.parameters(), lr=self.config["hparams"]["optimizer"]["lr"],
-      #                     betas=self.config["hparams"]["optimizer"]["betas"],
-       #                    eps=self.config["hparams"]["optimizer"]["eps"],
-        #                   weight_decay=self.config["hparams"]["optimizer"]["weight_decay"])
-        #scheduler = get_cosine_schedule_with_warmup(self.optimizer, self.config["hparams"]["scheduler"]["n_warmup"], self.config["hparams"]["n_epochs"])
-        #return [self.optimizer]#, [{"scheduler": scheduler, "interval": "epoch"}]
+   
+    def test_step(self, batch, batch_idx):
+        # Here we just reuse the validation_step for testing
+        specs, targets = batch
+        outputs = self(specs)
+        test_loss = self.criterion(outputs, targets)
+        if self.config["mode"] == "multilabel":
+            y_pred_sigmoid = torch.sigmoid(outputs)
+            self.val_precision(y_pred_sigmoid,targets.long())
+            self.log("test_mAP",self.val_precision, prog_bar=True, on_epoch=True, sync_dist=True)
+        else:
+            self.val_precision(outputs, targets)
+            self.log("test_acc",self.val_precision, prog_bar=True, on_epoch=True, sync_dist=True)
+        #correct = outputs.argmax(1).eq(targets.argmax(1)).sum().float()
+        #accuracy = correct / targets.shape[0]
+        self.log_dict({"test_loss": test_loss}, on_epoch=True, on_step=True, sync_dist=True)
+        return test_loss
     
+    def test_epoch_end(self, outputs):
+        avg_test_loss = torch.stack([x['test_loss'] for x in outputs]).mean()
+        self.log('avg_test_loss', avg_test_loss, sync_dist=True)
+        
     def configure_optimizers(self):
         self.optimizer = optim.AdamW(self.model.parameters(), lr=self.config["hparams"]["optimizer"]["lr"],
                            betas=self.config["hparams"]["optimizer"]["betas"],
