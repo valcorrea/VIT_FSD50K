@@ -184,8 +184,8 @@ class FnetEncoderCustom(nn.Module):
             self.layers.append(
                 nn.ModuleList(
                     [
-                        P_Norm(hidden_size, FNetBasicFourierTransform(self.config)),
-                        #FNetFourierTransform(self.config),
+                        #P_Norm(hidden_size, FNetBasicFourierTransform(self.config)),
+                        FNetFourierTransform(self.config),
                         P_Norm(
                             hidden_size,
                             FeedForward(
@@ -217,7 +217,7 @@ class FnetEncoderCustom(nn.Module):
             for attn, ff in self.layers:
                 x = attn(x)[0]
                 attentions.append(x)
-                x = ff(x)
+                x = ff(x) + x
                 hidden_states.append(x)
         return x, hidden_states, attentions
 
