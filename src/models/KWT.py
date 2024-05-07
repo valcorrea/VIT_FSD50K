@@ -5,12 +5,14 @@ import torch.fft
 from einops import rearrange, repeat
 from einops.layers.torch import Rearrange
 from torch import einsum, nn
-from transformers.models.fnet.modeling_fnet import (
-    FNetConfig,
-    FNetEncoder,
-    FNetFourierTransform,
-    FNetBasicFourierTransform,
-)
+from src.models.FNet_config import FNetConfig
+from src.models.FNet_blocks import FNetBasicFourierTransform, FNetFourierTransform
+#from transformers.models.fnet.modeling_fnet import (
+#    FNetConfig,
+#    FNetEncoder,
+#    FNetFourierTransform,
+#    FNetBasicFourierTransform,
+#)
 
 # Basically vision transformer, ViT that accepts MFCC + SpecAug. Refer to:
 # https://github.com/lucidrains/vit-pytorch/blob/main/vit_pytorch/vit.py
