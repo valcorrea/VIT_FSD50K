@@ -19,7 +19,7 @@ def training_pipeline(config, logger, model, train_loader, val_loader):
     early_stopping = EarlyStopping(monitor="val_loss", mode="min", patience=config['hparams']['early_stopping_patience'], verbose=True)
     callbacks = [model_checkpoint, early_stopping]
 
-    trainer = L.Trainer(devices=1, accelerator="gpu", max_epochs=config['hparams']['n_epochs'], 
+    trainer = L.Trainer(devices=4, accelerator="gpu", max_epochs=config['hparams']['n_epochs'], 
                         logger=logger,
                         callbacks=callbacks,
                         log_every_n_steps=50,
@@ -55,11 +55,16 @@ def get_dataloaders(config):
     train_set = SpeechCommands(root=config['dataset_root'], 
                                audio_config=config['audio_config'], 
                                labels_map=config['labels_map'], 
-                               subset='training')
+                               subset='training',
+                               augment=True)
     val_set = SpeechCommands(root=config['dataset_root'], 
                              audio_config=config['audio_config'], 
                              labels_map=config['labels_map'], 
                              subset='validation')
+    if config['dev_mode']:
+        train_set._walker = train_set._walker[:1000]
+        val_set._walker = val_set._walker[:1000]
+        print(train_set.__len__())
 
     # Make dataloaders - added shuffle to train_loader
     train_loader = DataLoader(train_set, batch_size=config['hparams']['batch_size'], shuffle=True, num_workers=5)
@@ -75,6 +80,7 @@ def main(args):
         config['dataset_root'] = args.dataset_root
     if args.labels_map:
         config['labels_map'] = args.labels_map
+    config['dev_mode'] = args.dev_mode
     
     # Make config backward compatible
     if args.id:
@@ -119,6 +125,7 @@ if __name__ == '__main__':
     ap.add_argument('--labels_map', type=str, help='Path to lbl_map.json')
     ap.add_argument('--ckpt_path', type=str, help='Path to model checkpoint.')
     ap.add_argument("--useFNet", type=bool, default=False)
+    ap.add_argument('--dev_mode', action='store_true', help='Flag to limit the dataset for testing purposes.')
     args = ap.parse_args()
 
     main(args)
