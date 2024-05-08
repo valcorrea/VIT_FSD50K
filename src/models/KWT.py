@@ -6,7 +6,7 @@ from einops import rearrange, repeat
 from einops.layers.torch import Rearrange
 from torch import einsum, nn
 from src.models.FNet_config import FNetConfig
-from src.models.FNet_blocks import FNetBasicFourierTransform, FNetFourierTransform
+from src.models.FNet_blocks import FNetBasicFourierTransform, FNetFourierTransform, FNetMultiHead
 #from transformers.models.fnet.modeling_fnet import (
 #    FNetConfig,
 #    FNetEncoder,
@@ -65,6 +65,7 @@ class PostNorm(nn.Module):
         :param kwargs: Keyword arguments
         :return: PostNorm output
         """
+        #print("Shape of thing passed to FNet3 is: ", *x.shape)
         return self.norm(self.fn(x, **kwargs) + x)
 
 
@@ -133,6 +134,7 @@ class Attention(nn.Module):
         :param x: input tensor
         :return: Attention module output
         """
+        #print("Shape inside attention: ", *x.shape)
         b, n, _, h = *x.shape, self.heads
         qkv = self.to_qkv(x).chunk(3, dim=-1)
         q, k, v = map(lambda t: rearrange(t, "b n (h d) -> b h n d", h=h), qkv)
@@ -155,7 +157,9 @@ class FnetEncoderCustom(nn.Module):
         self,
         hidden_size,
         num_hidden_layers,
+        heads,
         intermediate_size,
+        num_patches,
         pre_norm=True,
         hidden_dropout_prob=0.0,
     ):
@@ -175,7 +179,9 @@ class FnetEncoderCustom(nn.Module):
         self.config = FNetConfig(
             num_hidden_layers=num_hidden_layers,
             hidden_size=hidden_size,
+            heads=heads,
             intermediate_size=intermediate_size,
+            num_patches=num_patches,
             hidden_act="gelu",
             hidden_dropout_prob=0.0,
         )
@@ -186,8 +192,9 @@ class FnetEncoderCustom(nn.Module):
             self.layers.append(
                 nn.ModuleList(
                     [
-                        #P_Norm(hidden_size, FNetBasicFourierTransform(self.config)),
-                        FNetFourierTransform(self.config),
+                        P_Norm(hidden_size, FNetBasicFourierTransform(self.config)),
+                        #FNetFourierTransform(self.config),
+                        #P_Norm(hidden_size, FNetMultiHead(self.config)),
                         P_Norm(
                             hidden_size,
                             FeedForward(
@@ -209,17 +216,18 @@ class FnetEncoderCustom(nn.Module):
         """
         hidden_states = []
         attentions = []
+        #print("Shape of thing passed to FNet2 is: ", *x.shape)
         if isinstance(self.P_Norm, PreNorm):
             for attn, ff in self.layers:
-                x = attn(x)[0] + x
+                x = attn(x) + x
                 attentions.append(x)
                 x = ff(x) + x
                 hidden_states.append(x)
         else:
             for attn, ff in self.layers:
-                x = attn(x)[0]
+                x = attn(x)
                 attentions.append(x)
-                x = ff(x) + x
+                x = ff(x)
                 hidden_states.append(x)
         return x, hidden_states, attentions
 
@@ -455,7 +463,7 @@ class KWTFNet(nn.Module):
         self.dropout = nn.Dropout(emb_dropout)
         self.mask_embedding = nn.Parameter(torch.FloatTensor(hidden_size).uniform_())
         self.transformer = FnetEncoderCustom(
-            hidden_size, num_hidden_layers, intermediate_size
+            hidden_size, num_hidden_layers, heads, intermediate_size, num_patches, pre_norm=pre_norm
         )
         self.pool = pool
         self.to_latent = nn.Identity()
@@ -489,9 +497,10 @@ class KWTFNet(nn.Module):
 
         x += self.pos_embedding[:, : (n + 1)]
         x = self.dropout(x)
-
+        #print("Shape of thing passed to FNet is: ", *x.shape)
+        # Shape of thing passed to FNet is:  torch.Size([512, 101, 192])
         x, hidden_states, attentions = self.transformer(x)
-
+        #print("Done with FNet")
         x = x.mean(dim=1) if self.pool == "mean" else x[:, 0]
 
         x = self.to_latent(x)
