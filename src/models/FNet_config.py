@@ -81,7 +81,9 @@ class FNetConfig(FNetConfig):
         vocab_size=32000,
         hidden_size=768,
         num_hidden_layers=12,
+        heads=3,
         intermediate_size=3072,
+        num_patches=101,
         hidden_act="gelu_new",
         hidden_dropout_prob=0.1,
         max_position_embeddings=512,
@@ -111,4 +113,6 @@ class FNetConfig(FNetConfig):
                          use_tpu_fourier_optimizations = use_tpu_fourier_optimizations,
                          tpu_short_seq_length = tpu_short_seq_length,
                          **kwargs)
-        self.headCount = 0
+        # New config parameters
+        self.num_patches = num_patches
+        self.heads = heads

@@ -192,9 +192,9 @@ class FnetEncoderCustom(nn.Module):
             self.layers.append(
                 nn.ModuleList(
                     [
-                        P_Norm(hidden_size, FNetBasicFourierTransform(self.config)),
+                        #P_Norm(hidden_size, FNetBasicFourierTransform(self.config)),
                         #FNetFourierTransform(self.config),
-                        #P_Norm(hidden_size, FNetMultiHead(self.config)),
+                        P_Norm(hidden_size, FNetMultiHead(self.config)),
                         P_Norm(
                             hidden_size,
                             FeedForward(
@@ -463,7 +463,7 @@ class KWTFNet(nn.Module):
         self.dropout = nn.Dropout(emb_dropout)
         self.mask_embedding = nn.Parameter(torch.FloatTensor(hidden_size).uniform_())
         self.transformer = FnetEncoderCustom(
-            hidden_size, num_hidden_layers, heads, intermediate_size, num_patches, pre_norm=pre_norm
+            hidden_size, num_hidden_layers, heads, intermediate_size, num_patches+1, pre_norm=pre_norm
         )
         self.pool = pool
         self.to_latent = nn.Identity()
