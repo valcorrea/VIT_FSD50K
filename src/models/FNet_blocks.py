@@ -6,14 +6,14 @@ from einops.layers.torch import Rearrange
 from torch import einsum, nn
 
 class FNetBasicFourierTransform(nn.Module):
-    def __init__(self, config):
+    def __init__(self, config, mixDim=(1,2)):
         super().__init__()
-        self._init_fourier_transform(config)
+        self._init_fourier_transform(config, mixDim)
 
-    def _init_fourier_transform(self, config):
+    def _init_fourier_transform(self, config, mixDim):
         # Dim 1 is patch dimension
         # Dim 2 is embedding dimension
-        self.fourier_transform = partial(torch.fft.fftn, dim=(1,2))
+        self.fourier_transform = partial(torch.fft.fftn, dim=mixDim)
 
     def forward(self, hidden_states):
         # NOTE: We do not use torch.vmap as it is not integrated into PyTorch stable versions.
@@ -52,14 +52,15 @@ class FNetWindowed(nn.Module):
         super().__init__()
         assert (config.num_patches % window_size) == 0, "Number of patches must be divisible by window size"
         self.window_size = window_size
-        self.self = FNetBasicFourierTransform(config)
-        self.net = nn.Sequential(
-            nn.Linear(config.hidden_size, config.intermediate_size),
-            nn.GELU(),
-            nn.Dropout(config.hidden_dropout_prob),
-            nn.Linear(config.intermediate_size, config.hidden_size),
-            nn.Dropout(config.hidden_dropout_prob),
-        )
+        self.self = FNetBasicFourierTransform(config, mixDim=(1))
+        #self.net = nn.Sequential(
+        #    nn.Linear(config.hidden_size, config.intermediate_size),
+        #    nn.GELU(),
+        #    nn.Dropout(config.hidden_dropout_prob),
+        #    nn.Linear(config.intermediate_size, config.hidden_size),
+        #    nn.Dropout(config.hidden_dropout_prob),
+        #)
+        self.embedFNet = FNetBasicFourierTransform(config, mixDim=(2))
 
     def forward(self, hidden_states):
         #i = torch.randint(0, hidden_states.shape[1], (1,),)
@@ -74,6 +75,11 @@ class FNetWindowed(nn.Module):
         self_outputs = self.self(x)
         #print("Shape of self_outputs: ", *self_outputs.shape)
         self_outputs = rearrange(self_outputs, "b w d n -> b (n w) d")
+        #self_outputs = self.net(self_outputs)
+        
+        # Maybe add basicFnet accross embed dimension here
+        self_outputs = self.embedFNet(self_outputs)
+
         #hidden_states[:,1:,:] = self_outputs
         #outputs = hidden_states
         outputs = self_outputs
@@ -102,6 +108,7 @@ class FNetMultiHead(nn.Module):
             if project_out
             else nn.Identity()
         )
+        #self.embedFNet = FNetBasicFourierTransform(config, mixDim=(2))
         #self.generator = torch.Generator()
         #self.generator.manual_seed(1370210911620412)
 
@@ -126,4 +133,6 @@ class FNetMultiHead(nn.Module):
         out = rearrange(out, "b h n d -> b n (h d)")
         #out = torch.cat((out[:,:index,:], x[:,index,None,:], out[:,index:,:]), dim=1)
         #print("Shape of FNet output: ", *out.shape)
-        return self.to_out(out)
+        out = self.to_out(out)
+        #out = self.embedFNet(out)
+        return out

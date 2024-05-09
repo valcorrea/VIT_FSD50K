@@ -207,6 +207,8 @@ class FnetEncoderCustom(nn.Module):
                 )
             )
         self.P_Norm = P_Norm
+        print(self.P_Norm)
+        print("Using Pre Norm?: ", isinstance(self.P_Norm, PreNorm))
 
     def forward(self, x):
         """
