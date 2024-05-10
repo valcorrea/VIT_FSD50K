@@ -141,12 +141,14 @@ class FNetMultiHead(nn.Module):
         #window_sizes = (101,)
         FNetBlocks = (FNetWindowed, FNetWindowed1, FNetWindowed2)
         self.FNetWindowedBlocks = nn.ModuleList([FNetBlocks[config.FNet_Type](config, window_sizes[i]) for i in range(self.heads)])
+        print("Using window model: ", self.FNetWindowedBlocks)
         self.to_out = (
             nn.Sequential(nn.Linear(inner_dim, config.hidden_size), nn.Dropout(config.hidden_dropout_prob))
             if project_out
             else nn.Identity()
         )
         self.embedFNet = FNetBasicFourierTransform(config, mixDim=(2)) if config.concatDFT else nn.Identity()
+        print("Embed FNet is: ", self.embedFNet)
         #self.generator = torch.Generator()
         #self.generator.manual_seed(1370210911620412)
 

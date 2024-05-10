@@ -196,9 +196,9 @@ class FnetEncoderCustom(nn.Module):
             self.layers.append(
                 nn.ModuleList(
                     [
-                        P_Norm(hidden_size, FNetBasicFourierTransform(self.config)),
+                        #P_Norm(hidden_size, FNetBasicFourierTransform(self.config)),
                         #FNetFourierTransform(self.config),
-                        #P_Norm(hidden_size, FNetMultiHead(self.config)),
+                        P_Norm(hidden_size, FNetMultiHead(self.config)),
                         P_Norm(
                             hidden_size,
                             FeedForward(

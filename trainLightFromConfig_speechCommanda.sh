@@ -1,9 +1,9 @@
 #!/bin/bash
-#SBATCH --output="train_FNet_Speech_Commands.log"
+#SBATCH --output="train_MFNet_Speech_Commands_Model2.log"
 #SBATCH --job-name="SpeechCommands_FNet"
-#SBATCH --gres=gpu:4
+#SBATCH --gres=gpu:1
 #SBATCH --time=12:00:00 # walltime
-#SBATCH --ntasks-per-node=4
+# #SBATCH --ntasks-per-node=4
 # #SBATCH --nodelist=a256-t4-02
 # #SBATCH --exclude=nv-ai-03
 
