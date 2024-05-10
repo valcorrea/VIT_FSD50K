@@ -95,6 +95,8 @@ class FNetConfig(FNetConfig):
         pad_token_id=3,
         bos_token_id=1,
         eos_token_id=2,
+        FNet_Type=1,    # 0 is for testing, 1 is with global DFT after window, 2 is with linear layer after window
+        concat_DFT=False,
         **kwargs,
     ):
         super().__init__(pad_token_id = pad_token_id,
@@ -116,3 +118,5 @@ class FNetConfig(FNetConfig):
         # New config parameters
         self.num_patches = num_patches
         self.heads = heads
+        self.FNet_Type = FNet_Type
+        self.concat_DFT = concat_DFT

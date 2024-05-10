@@ -86,6 +86,43 @@ class FNetWindowed(nn.Module):
         #print("Exiting FNetWindowed")
         return outputs
 
+# FNet with windowed DFT on patch dimension followed by global DFT on embed dimensions
+class FNetWindowed1(nn.Module):
+    def __init__(self, config, window_size):
+        super().__init__()
+        assert (config.num_patches % window_size) == 0, "Number of patches must be divisible by window size"
+        self.window_size = window_size
+        self.self = FNetBasicFourierTransform(config, mixDim=(1))
+        self.embedFNet = FNetBasicFourierTransform(config, mixDim=(2))
+
+    def forward(self, hidden_states):
+        x = hidden_states
+        x = rearrange(x, "b (n w) d -> b w d n", w=self.window_size)
+        self_outputs = self.self(x)
+        self_outputs = rearrange(self_outputs, "b w d n -> b (n w) d")
+        # Maybe add basicFnet accross embed dimension here
+        self_outputs = self.embedFNet(self_outputs)
+        return self_outputs
+
+# FNet with windowed DFT on both dimensions followed by an MLP to mix the windowed outputs
+class FNetWindowed2(nn.Module):
+    def __init__(self, config, window_size):
+        super().__init__()
+        assert (config.num_patches % window_size) == 0, "Number of patches must be divisible by window size"
+        self.window_size = window_size
+        self.self = FNetBasicFourierTransform(config, mixDim=(1,2))
+        self.mlp = nn.Linear(config.num_patches, config.num_patches, bias=False)
+
+    def forward(self, hidden_states):
+        x = hidden_states
+        x = rearrange(x, "b (n w) d -> b w d n", w=self.window_size)
+        self_outputs = self.self(x)
+        self_outputs = rearrange(self_outputs, "b w d n -> b d (n w)")
+        # Maybe add basicFnet accross embed dimension here
+        self_outputs = self.mlp(self_outputs)
+        self_outputs = rearrange(self_outputs, "b d n -> b n d")
+        return self_outputs
+
 class FNetMultiHead(nn.Module):
     def __init__(self, config):
         """
@@ -102,13 +139,14 @@ class FNetMultiHead(nn.Module):
         # Hardcoded for now
         window_sizes = (100, 50, 25, 100, 10, 5, 50, 25)
         #window_sizes = (101,)
-        self.FNetWindowedBlocks = nn.ModuleList([FNetWindowed(config, window_sizes[i]) for i in range(self.heads)])
+        FNetBlocks = (FNetWindowed, FNetWindowed1, FNetWindowed2)
+        self.FNetWindowedBlocks = nn.ModuleList([FNetBlocks[config.FNet_Type](config, window_sizes[i]) for i in range(self.heads)])
         self.to_out = (
             nn.Sequential(nn.Linear(inner_dim, config.hidden_size), nn.Dropout(config.hidden_dropout_prob))
             if project_out
             else nn.Identity()
         )
-        #self.embedFNet = FNetBasicFourierTransform(config, mixDim=(2))
+        self.embedFNet = FNetBasicFourierTransform(config, mixDim=(2)) if config.concatDFT else nn.Identity()
         #self.generator = torch.Generator()
         #self.generator.manual_seed(1370210911620412)
 
@@ -134,5 +172,5 @@ class FNetMultiHead(nn.Module):
         #out = torch.cat((out[:,:index,:], x[:,index,None,:], out[:,index:,:]), dim=1)
         #print("Shape of FNet output: ", *out.shape)
         out = self.to_out(out)
-        #out = self.embedFNet(out)
+        out = self.embedFNet(out)
         return out
