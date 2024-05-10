@@ -28,11 +28,11 @@ def training_pipeline(config, logger, model, train_loader, val_loader):
     #profiler = PyTorchProfiler(".", "FNet_Perf_KWT2")
     profiler = None
 
-    trainer = L.Trainer(devices=1, accelerator="gpu", max_epochs=config['hparams']['n_epochs'], 
+    trainer = L.Trainer(devices=4, accelerator="gpu", max_epochs=config['hparams']['n_epochs'], 
                         logger=logger,
                         callbacks=callbacks,
                         log_every_n_steps=100,
-                        #strategy='ddp_find_unused_parameters_true',
+                        strategy='ddp_find_unused_parameters_true',
                         default_root_dir=config['exp']['save_dir'],)
 
     trainer.fit(model, train_loader, val_loader)
@@ -78,11 +78,12 @@ def get_dataloaders(extra_feats, config):
     train_set = SpeechCommands(root=config['dataset_root'], 
                                audio_config=config['audio_config'], 
                                labels_map=config['labels_map'], 
-                               subset='training', features=features)
+                               subset='training',
+                               augment=True)
     val_set = SpeechCommands(root=config['dataset_root'], 
                              audio_config=config['audio_config'], 
                              labels_map=config['labels_map'], 
-                             subset='validation', features=features)
+                             subset='validation')
     
     # development mode (less files)
     # if config['dev_mode']:
