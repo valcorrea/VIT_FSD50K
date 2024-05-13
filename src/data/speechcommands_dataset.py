@@ -14,8 +14,6 @@ class SpeechCommands(SPEECHCOMMANDS):
                  labels_map: str,
                  subset: str,
                  download: bool = True,
-                 duration: float = 1.0,
-                 num_frames=100,
                  bg_prob = 0.7,
                  normalize=True,
                  r_min=0.85,
@@ -37,8 +35,6 @@ class SpeechCommands(SPEECHCOMMANDS):
         labels_map (str): Path to the labels map json file. 
         subset (str): Train/validation/test subset
         download (bool): Whether to download the dataset.
-        duration (float): Audio duration
-        num_frames (int): Number of timesteps in the final spectrogram
         bg_prob (float): Probability of adding background noise
         normalize (bool): Whether to normalize the audio
         n_time_masks (int): Number of time masks
@@ -52,8 +48,6 @@ class SpeechCommands(SPEECHCOMMANDS):
         
         np.random.seed(seed)
 
-        self.duration = duration
-
         # Audio Config
         self.sr = audio_config.get('sr', 16000)
         self.n_fft = audio_config.get('n_fft', 400)
@@ -62,13 +56,10 @@ class SpeechCommands(SPEECHCOMMANDS):
         self.f_min = audio_config.get('f_min', 50)
         self.f_max = audio_config.get('f_max', 8000)
         self.n_mels = audio_config.get('n_mels', 80)
+        self.duration = audio_config.get('duration', 1.0)
+        self.num_frames = audio_config.get('num_frames', None)
 
         self.normalize = normalize
-    
-        if num_frames is not None:
-            self.num_frames = int(num_frames)
-        else:
-            self.num_frames = None
 
         self.melspec = torchaudio.transforms.MelSpectrogram(
             sample_rate=self.sr, n_fft=self.n_fft, win_length=self.win_len, hop_length=self.hop_len,
