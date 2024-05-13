@@ -18,21 +18,25 @@ class LightningKWT(L.LightningModule):
             else KWTFNet(**config["hparams"]["KWTFNet"])
         )
         self.config = config
-        self.num_classes= self.config['hparams']['KWT']['num_classes']
-        if self.config.get('cw', None) is not None:
-            print("!!!!!!!!!!! loading class weights !!!!!!!!")
-            self.cw = torch.load(self.config["cw"], map_location="cpu")
-            print("self.cw shape:", self.cw.shape)
-        else:
-            self.cw = None
-        if self.config["mode"] == "multilabel":
-            self.train_precision = AveragePrecision(task="multilabel", num_labels=self.num_classes) #logging average precision
-            self.val_precision = AveragePrecision(task="multilabel", num_labels=self.num_classes) #logging average precision
-            self.criterion =  nn.BCEWithLogitsLoss(pos_weight=self.cw) # multi label classification
-        else:
-            self.train_precision = MulticlassAccuracy(num_classes=self.num_classes) #logging multiclass accuracy
-            self.val_precision = MulticlassAccuracy(num_classes=self.num_classes) #logging multiclass accuracy
-            self.criterion = nn.CrossEntropyLoss()
+        self.num_classes= (
+            self.config['hparams']['KWT']['num_classes']
+            if not useFnet
+            else self.config['hparams']['KWTFNet']['num_classes']
+        )
+        # if self.config.get('cw', None) is not None:
+        #     print("!!!!!!!!!!! loading class weights !!!!!!!!")
+        #     self.cw = torch.load(self.config["cw"], map_location="cpu")
+        #     print("self.cw shape:", self.cw.shape)
+        # else:
+        #     self.cw = None
+        # if self.config["mode"] == "multilabel":
+        #     self.train_precision = AveragePrecision(task="multilabel", num_labels=self.num_classes) #logging average precision
+        #     self.val_precision = AveragePrecision(task="multilabel", num_labels=self.num_classes) #logging average precision
+        #     self.criterion =  nn.BCEWithLogitsLoss(pos_weight=self.cw) # multi label classification
+        # else:
+        self.train_precision = MulticlassAccuracy(num_classes=self.num_classes) #logging multiclass accuracy
+        self.val_precision = MulticlassAccuracy(num_classes=self.num_classes) #logging multiclass accuracy
+        self.criterion = nn.CrossEntropyLoss()
         
     def forward(self, specs):
         return self.model(specs)
@@ -42,13 +46,13 @@ class LightningKWT(L.LightningModule):
         outputs = self(specs)
         loss = self.criterion(outputs, targets)
         #correct = outputs.argmax(1).eq(targets.argmax(1)).sum().float()
-        if self.config["mode"] == "multilabel":
-            y_pred_sigmoid = torch.sigmoid(outputs) #predictions
-            self.train_precision(y_pred_sigmoid,targets.long())
-            self.log("train_mAP", self.train_precision, prog_bar=True, on_epoch=True, sync_dist=True)
-        else:
-            self.train_precision(outputs,targets)
-            self.log("train_acc", self.train_precision, prog_bar=True, on_epoch=True, sync_dist=True)
+        # if self.config["mode"] == "multilabel":
+        #     y_pred_sigmoid = torch.sigmoid(outputs) #predictions
+        #     self.train_precision(y_pred_sigmoid,targets.long())
+        #     self.log("train_mAP", self.train_precision, prog_bar=True, on_epoch=True, sync_dist=True)
+        # else:
+        self.train_precision(outputs,targets)
+        self.log("train_acc", self.train_precision, prog_bar=True, on_epoch=True, sync_dist=True)
         #auc = torch.tensor(AveragePrecision(targets.detach().cpu().numpy(),
         #                                           y_pred_sigmoid.detach().cpu().numpy(), average="macro"))
     
@@ -62,13 +66,13 @@ class LightningKWT(L.LightningModule):
         specs, targets = batch
         outputs = self(specs)
         val_loss = self.criterion(outputs, targets)
-        if self.config["mode"] == "multilabel":
-            y_pred_sigmoid = torch.sigmoid(outputs)
-            self.val_precision(y_pred_sigmoid,targets.long())
-            self.log("val_mAP",self.val_precision, prog_bar=True, on_epoch=True, sync_dist=True)
-        else:
-            self.val_precision(outputs, targets)
-            self.log("val_acc",self.val_precision, prog_bar=True, on_epoch=True, sync_dist=True)
+        # if self.config["mode"] == "multilabel":
+        #     y_pred_sigmoid = torch.sigmoid(outputs)
+        #     self.val_precision(y_pred_sigmoid,targets.long())
+        #     self.log("val_mAP",self.val_precision, prog_bar=True, on_epoch=True, sync_dist=True)
+        # else:
+        self.val_precision(outputs, targets)
+        self.log("val_acc",self.val_precision, prog_bar=True, on_epoch=True, sync_dist=True)
         #correct = outputs.argmax(1).eq(targets.argmax(1)).sum().float()
         #accuracy = correct / targets.shape[0]
         self.log_dict({"val_loss": val_loss}, on_epoch=True, on_step=True, sync_dist=True)
@@ -79,13 +83,13 @@ class LightningKWT(L.LightningModule):
         specs, targets = batch
         outputs = self(specs)
         test_loss = self.criterion(outputs, targets)
-        if self.config["mode"] == "multilabel":
-            y_pred_sigmoid = torch.sigmoid(outputs)
-            self.val_precision(y_pred_sigmoid,targets.long())
-            self.log("test_mAP",self.val_precision, prog_bar=True, on_epoch=True, sync_dist=True)
-        else:
-            self.val_precision(outputs, targets)
-            self.log("test_acc",self.val_precision, prog_bar=True, on_epoch=True, sync_dist=True)
+        # if self.config["mode"] == "multilabel":
+        #     y_pred_sigmoid = torch.sigmoid(outputs)
+        #     self.val_precision(y_pred_sigmoid,targets.long())
+        #     self.log("test_mAP",self.val_precision, prog_bar=True, on_epoch=True, sync_dist=True)
+        # else:
+        self.val_precision(outputs, targets)
+        self.log("test_acc",self.val_precision, prog_bar=True, on_epoch=True, sync_dist=True)
         #correct = outputs.argmax(1).eq(targets.argmax(1)).sum().float()
         #accuracy = correct / targets.shape[0]
         self.log_dict({"test_loss": test_loss}, on_epoch=True, on_step=True, sync_dist=True)
