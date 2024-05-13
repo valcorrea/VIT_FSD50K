@@ -5,7 +5,7 @@ import lightning as L
 import torch
 from src.models.KWT import KWT, KWTFNet
 from torch import nn, optim
-from transformers import get_cosine_schedule_with_warmup
+from transformers import get_cosine_schedule_with_warmup, get_cosine_with_hard_restarts_schedule_with_warmup
 from torchmetrics.classification import AveragePrecision, MulticlassAccuracy
 
 
@@ -79,9 +79,13 @@ class LightningKWT(L.LightningModule):
                            betas=self.config["hparams"]["optimizer"]["betas"],
                            eps=self.config["hparams"]["optimizer"]["eps"],
                            weight_decay=self.config["hparams"]["optimizer"]["weight_decay"])
-        return [self.optimizer]
-        #scheduler = get_cosine_schedule_with_warmup(self.optimizer, self.config["hparams"]["scheduler"]["n_warmup"], self.config["hparams"]["n_epochs"])
-        #return [{"scheduler": scheduler, "interval": "epoch"}]
+        if self.config["hparams"]["scheduler"]["use_scheduler"]:
+            scheduler = get_cosine_schedule_with_warmup(self.optimizer, self.config["hparams"]["scheduler"]["n_warmup"], self.config["hparams"]["n_epochs"])
+            #scheduler = get_cosine_with_hard_restarts_schedule_with_warmup(self.optimizer, self.config["hparams"]["scheduler"]["n_warmup"], self.config["hparams"]["n_epochs"], 2)
+            return {"optimizer": self.optimizer, "lr_scheduler":{"scheduler": scheduler, "interval": "epoch"}}
+        else:
+            return [self.optimizer]
+        
     
 class LightningSweep(L.LightningModule):
     def __init__(self,
