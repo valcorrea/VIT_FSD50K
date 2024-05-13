@@ -5,6 +5,7 @@ import wandb
 
 from torch.utils.data import DataLoader
 import lightning as L
+from lightning.pytorch import seed_everything
 from lightning.pytorch.loggers import WandbLogger
 from lightning.pytorch.callbacks import ModelCheckpoint, EarlyStopping
 
@@ -82,7 +83,6 @@ def main(args):
         config['labels_map'] = args.labels_map
     config['dev_mode'] = args.dev_mode
     
-    # Make config backward compatible
     if args.id:
         config["exp"]["exp_name"] = config["exp"]["exp_name"] + args.id
     
@@ -97,7 +97,7 @@ def main(args):
     else:
         logger = None
     
-    torch.manual_seed(42)
+    seed_everything(config['seed'])
     model = get_model(args.ckpt_path, config, args.useFNet)
     train_loader, val_loader = get_dataloaders(config)
     training_pipeline(config, logger, model, train_loader, val_loader)
@@ -121,10 +121,10 @@ if __name__ == '__main__':
     ap = ArgumentParser("Driver code")
     ap.add_argument('--config', type=str, required=True, help='Path to configuration file')
     ap.add_argument('--dataset_root', type=str, help='Dataset root directory')
-    ap.add_argument('--id', type=str, help='Unique experiment identifier')
     ap.add_argument('--labels_map', type=str, help='Path to lbl_map.json')
     ap.add_argument('--ckpt_path', type=str, help='Path to model checkpoint.')
-    ap.add_argument("--useFNet", type=bool, default=False)
+    ap.add_argument('--useFNet', type=bool, default=False)
+    ap.add_argument('--id', type=str, help='Unique experiment identifier')
     ap.add_argument('--dev_mode', action='store_true', help='Flag to limit the dataset for testing purposes.')
     args = ap.parse_args()
 

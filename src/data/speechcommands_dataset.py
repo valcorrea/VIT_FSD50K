@@ -24,7 +24,6 @@ class SpeechCommands(SPEECHCOMMANDS):
                  time_mask_width=25,
                  n_freq_masks=2,
                  freq_mask_width=7,
-                 seed=42,
                  augment=False
                  ) -> None:
         super().__init__(root, "speech_commands_v0.02", "SpeechCommands", download, subset)
@@ -45,8 +44,6 @@ class SpeechCommands(SPEECHCOMMANDS):
         '''
         with open(labels_map, 'r') as fd:
                 self.labels_map = json.load(fd)
-        
-        np.random.seed(seed)
 
         # Audio Config
         self.sr = audio_config.get('sr', 16000)
