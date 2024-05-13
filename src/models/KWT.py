@@ -1,5 +1,7 @@
 """KWT model based on model from https://github.com/ID56/Torch-KWT/blob/main/models/kwt.py"""
 
+from functools import partial
+
 import torch
 import torch.fft
 from einops import rearrange, repeat
@@ -502,6 +504,26 @@ class KWTFNet(nn.Module):
             outputs = outputs + (attentions,) if output_attentions else outputs
             return outputs
         return self.mlp_head(x)
+
+
+class FNetBasicFourierTransform(nn.Module):
+    def __init__(self, mixDim=(1, 2)):
+        super().__init__()
+        self._init_fourier_transform(mixDim)
+
+    def _init_fourier_transform(self, mixDim):
+        # Dim 1 is patch dimension
+        # Dim 2 is embedding dimension
+        self.fourier_transform = partial(torch.fft.fftn, dim=mixDim)
+
+    def forward(self, hidden_states):
+        # NOTE: We do not use torch.vmap as it is not integrated into PyTorch stable versions.
+        # Interested users can modify the code to use vmap from the nightly versions, getting the vmap from here:
+        # https://pytorch.org/docs/master/generated/torch.vmap.html. Note that fourier transform methods will need
+        # change accordingly.
+
+        outputs = self.fourier_transform(hidden_states).real
+        return outputs
 
 
 def kwt_from_name(model_name: str):
