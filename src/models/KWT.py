@@ -7,11 +7,6 @@ import torch.fft
 from einops import rearrange, repeat
 from einops.layers.torch import Rearrange
 from torch import einsum, nn
-from transformers.models.fnet.modeling_fnet import (
-    FNetConfig,
-    FNetEncoder,
-    FNetFourierTransform,
-)
 
 # Basically vision transformer, ViT that accepts MFCC + SpecAug. Refer to:
 # https://github.com/lucidrains/vit-pytorch/blob/main/vit_pytorch/vit.py
@@ -172,9 +167,9 @@ class FnetEncoderCustom(nn.Module):
 
     def __init__(
         self,
-        hidden_size,
-        num_hidden_layers,
-        intermediate_size,
+        dim,
+        depth,
+        mlp_dim,
         pre_norm=True,
         hidden_dropout_prob=0.0,
     ):
@@ -182,35 +177,27 @@ class FnetEncoderCustom(nn.Module):
         Initializes Transformer model
 
         Config should contain
-        : hidden_size: transformer dimension
-        : num_hidden_layers: number of transformer layers or in this case FNet layers
-        : intermediate_size: feedForward or MLP dimension
+        : dim: transformer dimension
+        : depth: number of transformer layers or in this case FNet layers
+        : mlp_dim: feedForward or MLP dimension
         : pre_norm: specifies whether PreNorm (True) or PostNorm (False) is used
         : hidden_dropout_prob: dropout percentage of FeedForward modules
         """
         super().__init__()
         self.layers = nn.ModuleList([])
 
-        self.config = FNetConfig(
-            num_hidden_layers=num_hidden_layers,
-            hidden_size=hidden_size,
-            intermediate_size=intermediate_size,
-            hidden_act="gelu",
-            hidden_dropout_prob=0.0,
-        )
-
         P_Norm = PreNorm if pre_norm else PostNorm
 
-        for _ in range(num_hidden_layers):
+        for _ in range(depth):
             self.layers.append(
                 nn.ModuleList(
                     [
-                        P_Norm(hidden_size, FNetBasicFourierTransform()),
+                        P_Norm(dim, FNetBasicFourierTransform()),
                         P_Norm(
-                            hidden_size,
+                            dim,
                             FeedForward(
-                                hidden_size,
-                                intermediate_size,
+                                dim,
+                                mlp_dim,
                                 dropout=hidden_dropout_prob,
                             ),
                         ),
