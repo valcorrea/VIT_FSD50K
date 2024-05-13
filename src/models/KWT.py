@@ -1,5 +1,7 @@
 """KWT model based on model from https://github.com/ID56/Torch-KWT/blob/main/models/kwt.py"""
 
+from functools import partial
+
 import torch
 import torch.fft
 from einops import rearrange, repeat
@@ -143,6 +145,26 @@ class Attention(nn.Module):
         return self.to_out(out)
 
 
+class FNetBasicFourierTransform(nn.Module):
+    def __init__(self, mixDim=(1, 2)):
+        super().__init__()
+        self._init_fourier_transform(mixDim)
+
+    def _init_fourier_transform(self, mixDim):
+        # Dim 1 is patch dimension
+        # Dim 2 is embedding dimension
+        self.fourier_transform = partial(torch.fft.fftn, dim=mixDim)
+
+    def forward(self, hidden_states):
+        # NOTE: We do not use torch.vmap as it is not integrated into PyTorch stable versions.
+        # Interested users can modify the code to use vmap from the nightly versions, getting the vmap from here:
+        # https://pytorch.org/docs/master/generated/torch.vmap.html. Note that fourier transform methods will need
+        # change accordingly.
+
+        outputs = self.fourier_transform(hidden_states).real
+        return outputs
+
+
 class FnetEncoderCustom(nn.Module):
     """
     FnetEncoderCustom to work with FNetFourierTransform and feedForward from KWT model
@@ -183,7 +205,7 @@ class FnetEncoderCustom(nn.Module):
             self.layers.append(
                 nn.ModuleList(
                     [
-                        P_Norm(hidden_size, FNetFourierTransform(self.config)),
+                        P_Norm(hidden_size, FNetBasicFourierTransform()),
                         P_Norm(
                             hidden_size,
                             FeedForward(
@@ -399,14 +421,11 @@ class KWTFNet(nn.Module):
         input_res,
         patch_res,
         num_classes,
-        hidden_size,
-        num_hidden_layers,
-        heads,
-        intermediate_size,
+        dim,
+        depth,
+        mlp_dim,
         pool="cls",
         channels=1,
-        dim_head=64,
-        hidden_dropout_prob=0.0,
         emb_dropout=0.0,
         pre_norm=True,
         **kwargs,
@@ -416,14 +435,12 @@ class KWTFNet(nn.Module):
         :param input_res: input spectrogram size
         :param patch_res: patch size
         :param num_classes: number of keyword classes
-        :param hidden_size ---> dim: transformer dimension
-        :param num_hidden_layers ---> depth: number of transformer layers
-        :param heads: number of attention heads
+        :param dim: transformer dimension
+        :param depth: number of transformer layers
         :param mlp_dim: MLP dimension
         :param pool: specifies whether CLS token or average pooling of transformer model is used for classification
         :param channels: Number of input channels
         :param dim_head: dimension of attention heads
-        :param dropout: dropout of transformer attention and feed forward layers
         :param emb_dropout: dropout of embeddings
         :param pre_norm: specifies whether PreNorm (True) or PostNorm (False) is used
         :param kwargs: Keyword arguments
@@ -444,23 +461,19 @@ class KWTFNet(nn.Module):
                 p1=patch_res[0],
                 p2=patch_res[1],
             ),
-            nn.Linear(patch_dim, hidden_size),
+            nn.Linear(patch_dim, dim),
         )
 
-        self.pos_embedding = nn.Parameter(torch.randn(1, num_patches + 1, hidden_size))
-        self.cls_token = nn.Parameter(torch.randn(1, 1, hidden_size))
+        self.pos_embedding = nn.Parameter(torch.randn(1, num_patches + 1, dim))
+        self.cls_token = nn.Parameter(torch.randn(1, 1, dim))
         self.dropout = nn.Dropout(emb_dropout)
-        self.mask_embedding = nn.Parameter(torch.FloatTensor(hidden_size).uniform_())
-        self.transformer = FnetEncoderCustom(
-            hidden_size, num_hidden_layers, intermediate_size
-        )
+        self.mask_embedding = nn.Parameter(torch.FloatTensor(dim).uniform_())
+        self.transformer = FnetEncoderCustom(dim, depth, mlp_dim, pre_norm=pre_norm)
         self.pool = pool
         self.to_latent = nn.Identity()
 
         # Create classification head
-        self.mlp_head = nn.Sequential(
-            nn.LayerNorm(hidden_size), nn.Linear(hidden_size, num_classes)
-        )
+        self.mlp_head = nn.Sequential(nn.LayerNorm(dim), nn.Linear(dim, num_classes))
 
     def forward(
         self, x, mask=None, output_hidden_states=False, output_attentions=False
