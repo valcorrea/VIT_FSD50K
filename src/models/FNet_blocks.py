@@ -123,6 +123,21 @@ class FNetWindowed2(nn.Module):
         self_outputs = rearrange(self_outputs, "b d n -> b n d")
         return self_outputs
 
+# FNet with windowed DFT on both dimensions followed by nothing. Technically the same as FNetWindowed1
+class FNetWindowed3(nn.Module):
+    def __init__(self, config, window_size):
+        super().__init__()
+        assert (config.num_patches % window_size) == 0, "Number of patches must be divisible by window size"
+        self.window_size = window_size
+        self.self = FNetBasicFourierTransform(config, mixDim=(1,2))
+
+    def forward(self, hidden_states):
+        x = hidden_states
+        x = rearrange(x, "b (n w) d -> b w d n", w=self.window_size)
+        self_outputs = self.self(x)
+        self_outputs = rearrange(self_outputs, "b w d n -> b (n w) d")
+        return self_outputs
+
 class FNetMultiHead(nn.Module):
     def __init__(self, config):
         """
@@ -147,7 +162,7 @@ class FNetMultiHead(nn.Module):
             if project_out
             else nn.Identity()
         )
-        self.embedFNet = FNetBasicFourierTransform(config, mixDim=(2)) if config.concatDFT else nn.Identity()
+        self.embedFNet = FNetBasicFourierTransform(config, mixDim=(2)) if config.concat_DFT else nn.Identity()
         print("Embed FNet is: ", self.embedFNet)
         #self.generator = torch.Generator()
         #self.generator.manual_seed(1370210911620412)
