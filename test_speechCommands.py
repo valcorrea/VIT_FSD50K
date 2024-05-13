@@ -53,7 +53,7 @@ def get_data(config):
         audio_config=config["audio_config"],
         labels_map=config["labels_map"],
         subset="testing",
-        augment=False
+        augment=False,
     )
 
     eval_loader = DataLoader(
@@ -153,6 +153,11 @@ def test_pipeline(model, test_loader, device, classes):
 
 def main(args):
     config = parse_config(args.conf)
+    if args.dataset_root:
+        config["dataset_root"] = args.dataset_root
+    if args.labels_map:
+        config["labels_map"] = args.labels_map
+
     model, device = get_model(args.ckpt, config)
     test_loader, classes = get_data(config)
 
@@ -193,6 +198,8 @@ if __name__ == "__main__":
         help="Optional experiment identifier.",
         default=None,
     )
+    parser.add_argument("--dataset_root", type=str, help="Dataset root directory")
+    parser.add_argument("--labels_map", type=str, help="Path to lbl_map.json")
     args = parser.parse_args()
 
     main(args)
