@@ -62,14 +62,15 @@ class SpeechCommands(SPEECHCOMMANDS):
         self.f_min = audio_config.get('f_min', 50)
         self.f_max = audio_config.get('f_max', 8000)
         self.n_mels = audio_config.get('n_mels', 80)
+        num_frames = audio_config.get('num_frames', num_frames)
 
         self.normalize = normalize
-    
+
         if num_frames is not None:
             self.num_frames = int(num_frames)
         else:
             self.num_frames = None
-
+        print("Number of frames given to dataset: ", self.num_frames)
         self.melspec = torchaudio.transforms.MelSpectrogram(
             sample_rate=self.sr, n_fft=self.n_fft, win_length=self.win_len, hop_length=self.hop_len,
             f_min=self.f_min, f_max=self.f_max,
