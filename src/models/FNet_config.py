@@ -95,7 +95,8 @@ class FNetConfig(FNetConfig):
         pad_token_id=3,
         bos_token_id=1,
         eos_token_id=2,
-        FNet_Type=1,    # 0 is for testing, 1 is with global DFT after window, 2 is with linear layer after window
+        # Using 1 head and FNet_Type 3 leads to it being a normal FNet instead of a multi-FNet
+        FNet_Type=1,    # 0 is for testing, 1 is with global DFT after window, 2 is with linear layer after window, 3 is only local DFT on patch and embed dimensions
         concat_DFT=False,
         **kwargs,
     ):
