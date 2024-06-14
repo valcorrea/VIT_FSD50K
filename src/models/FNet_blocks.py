@@ -98,6 +98,7 @@ class FNetWindowed1(nn.Module):
     def forward(self, hidden_states):
         x = hidden_states
         x = rearrange(x, "b (n w) d -> b w d n", w=self.window_size)
+        #x = rearrange(x, "b (n w) d -> (b n) w d", w=self.window_size)
         self_outputs = self.self(x)
         self_outputs = rearrange(self_outputs, "b w d n -> b (n w) d")
         # Maybe add basicFnet accross embed dimension here
@@ -138,6 +139,44 @@ class FNetWindowed3(nn.Module):
         self_outputs = rearrange(self_outputs, "b w d n -> b (n w) d")
         return self_outputs
 
+# FNet with windowed DFT on both dimensions followed by an MLP to mix the windowed outputs on embed dim
+class FNetWindowed4(nn.Module):
+    def __init__(self, config, window_size):
+        super().__init__()
+        assert (config.num_patches % window_size) == 0, "Number of patches must be divisible by window size"
+        self.window_size = window_size
+        self.self = FNetBasicFourierTransform(config, mixDim=(1,2))
+        # TODO: Change to working on embed dimension instead of patch dimension
+        self.mlp = nn.Linear(config.hidden_size, config.hidden_size, bias=False)
+
+    def forward(self, hidden_states):
+        x = hidden_states
+        x = rearrange(x, "b (n w) d -> b w d n", w=self.window_size)
+        self_outputs = self.self(x)
+        self_outputs = rearrange(self_outputs, "b w d n -> b (n w) d")
+        # Maybe add basicFnet accross embed dimension here
+        self_outputs = self.mlp(self_outputs)
+        return self_outputs
+    
+# FNet with windowed DFT on both dimensions preceded by an MLP on embed dim to create unique embeddings for each head
+class FNetWindowed5(nn.Module):
+    def __init__(self, config, window_size):
+        super().__init__()
+        assert (config.num_patches % window_size) == 0, "Number of patches must be divisible by window size"
+        self.window_size = window_size
+        self.self = FNetBasicFourierTransform(config, mixDim=(1,2))
+        # TODO: Change to working on embed dimension instead of patch dimension and put it before DFT
+        # So that each head has a different embed values to work with
+        self.mlp = nn.Linear(config.hidden_size, config.hidden_size, bias=False)
+
+    def forward(self, hidden_states):
+        x = hidden_states
+        x = self.mlp(x)
+        x = rearrange(x, "b (n w) d -> b w d n", w=self.window_size)
+        self_outputs = self.self(x)
+        self_outputs = rearrange(self_outputs, "b w d n -> b (n w) d")
+        return self_outputs
+
 class FNetMultiHead(nn.Module):
     def __init__(self, config):
         """
@@ -152,9 +191,12 @@ class FNetMultiHead(nn.Module):
 
         self.heads = config.heads
         # Hardcoded for now
-        window_sizes = (100, 50, 25, 100, 10, 5, 50, 25)
+        if config.multi_window:
+            window_sizes = (100, 50, 25, 100, 10, 5, 50, 25)
+        else:
+            window_sizes = (100, 100, 100, 100, 100, 100, 100, 100)
         #window_sizes = (101,)
-        FNetBlocks = (FNetWindowed, FNetWindowed1, FNetWindowed2)
+        FNetBlocks = (FNetWindowed, FNetWindowed1, FNetWindowed2, FNetWindowed3, FNetWindowed4, FNetWindowed5)
         self.FNetWindowedBlocks = nn.ModuleList([FNetBlocks[config.FNet_Type](config, window_sizes[i]) for i in range(self.heads)])
         print("Using window model: ", self.FNetWindowedBlocks)
         self.to_out = (

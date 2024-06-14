@@ -18,7 +18,7 @@ class LightningKWT(L.LightningModule):
             else KWTFNet(**config["hparams"]["KWTFNet"])
         )
         self.config = config
-        self.num_classes= self.config['hparams']['KWT']['num_classes']
+        self.num_classes= self.config['hparams']['KWT']['num_classes'] if not useFnet else config["hparams"]["KWTFNet"]['num_classes']
         if self.config.get('cw', None) is not None:
             print("!!!!!!!!!!! loading class weights !!!!!!!!")
             self.cw = torch.load(self.config["cw"], map_location="cpu")
@@ -76,8 +76,6 @@ class LightningKWT(L.LightningModule):
 
     def configure_optimizers(self):
         self.optimizer = optim.AdamW(self.model.parameters(), lr=self.config["hparams"]["optimizer"]["lr"],
-                           betas=self.config["hparams"]["optimizer"]["betas"],
-                           eps=self.config["hparams"]["optimizer"]["eps"],
                            weight_decay=self.config["hparams"]["optimizer"]["weight_decay"])
         if self.config["hparams"]["scheduler"]["use_scheduler"]:
             scheduler = get_cosine_schedule_with_warmup(self.optimizer, self.config["hparams"]["scheduler"]["n_warmup"], self.config["hparams"]["n_epochs"])

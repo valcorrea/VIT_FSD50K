@@ -163,6 +163,7 @@ class FnetEncoderCustom(nn.Module):
         pre_norm=True,
         hidden_dropout_prob=0.0,
         FNet_Type = 1,
+        multi_window=True,
         concat_DFT=False,
     ):
         """
@@ -187,6 +188,7 @@ class FnetEncoderCustom(nn.Module):
             hidden_act="gelu",
             hidden_dropout_prob=0.0,
             FNet_Type=FNet_Type,
+            multi_window=multi_window,
             concat_DFT=concat_DFT,
         )
 
@@ -422,8 +424,6 @@ class KWTFNet(nn.Module):
         intermediate_size,
         pool="cls",
         channels=1,
-        dim_head=64,
-        hidden_dropout_prob=0.0,
         emb_dropout=0.0,
         pre_norm=True,
         FNet_Type=1,
